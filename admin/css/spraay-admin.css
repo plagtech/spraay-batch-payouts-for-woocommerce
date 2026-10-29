@@ -1,0 +1,338 @@
+/**
+ * Spraay Batch Payouts admin styles.
+ *
+ * Builds on core WP admin styles; uses admin color-scheme variables where
+ * available so the UI follows the user's chosen scheme.
+ */
+
+.spraay-wrap {
+	--spraay-accent: var(--wp-admin-theme-color, #2271b1);
+	--spraay-border: #dcdcde;
+	--spraay-muted: #646970;
+	--spraay-panel: #fff;
+	max-width: 1200px;
+}
+
+.spraay-lede {
+	color: var(--spraay-muted);
+	font-size: 14px;
+	max-width: 720px;
+}
+
+/* Panels and layout */
+.spraay-panel {
+	background: var(--spraay-panel);
+	border: 1px solid var(--spraay-border);
+	border-radius: 4px;
+	margin: 16px 0;
+	padding: 4px 20px 16px;
+}
+
+.spraay-panel > h2 {
+	font-size: 15px;
+	margin: 16px 0 12px;
+}
+
+.spraay-columns {
+	display: grid;
+	gap: 0 16px;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+@media (max-width: 960px) {
+	.spraay-columns {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Dashboard cards */
+.spraay-cards {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	margin: 16px 0;
+}
+
+.spraay-card {
+	background: var(--spraay-panel);
+	border: 1px solid var(--spraay-border);
+	border-radius: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 20px;
+}
+
+.spraay-card__label {
+	color: var(--spraay-muted);
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.spraay-card__value {
+	font-size: 24px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+.spraay-card__value small {
+	color: var(--spraay-muted);
+	font-size: 13px;
+	font-weight: 400;
+}
+
+/* Key/value tables */
+.spraay-kv {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.spraay-kv th,
+.spraay-kv td {
+	border-bottom: 1px solid #f0f0f1;
+	padding: 8px 0;
+	text-align: left;
+	vertical-align: top;
+}
+
+.spraay-kv th {
+	color: var(--spraay-muted);
+	font-weight: 400;
+	padding-right: 16px;
+	width: 40%;
+}
+
+.spraay-kv code {
+	word-break: break-all;
+}
+
+/* Status badges */
+.spraay-status {
+	border-radius: 10px;
+	display: inline-block;
+	font-size: 12px;
+	line-height: 1;
+	padding: 4px 10px;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.spraay-status--draft { background: #f0f0f1; color: #50575e; }
+.spraay-status--estimated { background: #e5f0fa; color: #135e96; }
+.spraay-status--pending { background: #fcf0d4; color: #8a5a00; }
+.spraay-status--confirmed { background: #e2f4e6; color: #0a5c1f; }
+.spraay-status--failed { background: #fbe6e6; color: #8a1f1f; }
+
+h1 + .spraay-status {
+	margin-left: 8px;
+}
+
+/* Addresses and numbers */
+.spraay-address {
+	font-size: 12px;
+	word-break: break-all;
+}
+
+.spraay-num {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+th.spraay-num {
+	text-align: right;
+}
+
+/* Imports */
+.spraay-import {
+	margin: 12px 0;
+}
+
+.spraay-import > summary {
+	color: var(--spraay-accent);
+	cursor: pointer;
+	font-weight: 600;
+	padding: 6px 0;
+}
+
+details.spraay-panel.spraay-import {
+	padding-top: 12px;
+}
+
+.spraay-sample {
+	background: #f6f7f7;
+	font-size: 12px;
+	overflow-x: auto;
+	padding: 8px 12px;
+}
+
+.spraay-inline-form {
+	align-items: flex-end;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 8px 0;
+}
+
+.spraay-inline-form label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.spraay-notice-details {
+	list-style: disc;
+	margin: 0 0 8px 20px;
+}
+
+.spraay-date-filter {
+	align-items: center;
+	display: flex;
+	gap: 6px;
+}
+
+/* Builder */
+.spraay-steps {
+	counter-reset: spraay-step;
+	display: flex;
+	gap: 8px;
+	list-style: none;
+	margin: 16px 0;
+	padding: 0;
+}
+
+.spraay-steps li {
+	background: #f0f0f1;
+	border-radius: 16px;
+	color: var(--spraay-muted);
+	counter-increment: spraay-step;
+	margin: 0;
+	padding: 6px 14px;
+}
+
+.spraay-steps li::before {
+	content: counter(spraay-step) ". ";
+}
+
+.spraay-steps li.is-active {
+	background: var(--spraay-accent);
+	color: #fff;
+}
+
+.spraay-picker {
+	max-width: 560px;
+	position: relative;
+}
+
+.spraay-picker input[type="search"] {
+	width: 100%;
+}
+
+.spraay-picker__results {
+	background: #fff;
+	border: 1px solid var(--spraay-border);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	left: 0;
+	margin: 2px 0 0;
+	max-height: 280px;
+	overflow-y: auto;
+	position: absolute;
+	right: 0;
+	z-index: 10;
+}
+
+.spraay-picker__results li {
+	cursor: pointer;
+	margin: 0;
+	padding: 8px 12px;
+}
+
+.spraay-picker__results li:hover,
+.spraay-picker__results li:focus {
+	background: #f0f6fc;
+	outline: none;
+}
+
+.spraay-picker__results li.is-empty {
+	color: var(--spraay-muted);
+	cursor: default;
+}
+
+.spraay-rows td {
+	vertical-align: middle;
+}
+
+.spraay-rows .spraay-empty td {
+	color: var(--spraay-muted);
+	text-align: center;
+}
+
+.spraay-amount {
+	text-align: right;
+	width: 140px;
+}
+
+.spraay-amount.is-invalid {
+	border-color: #d63638;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+.spraay-remove {
+	color: #b32d2e;
+	font-size: 18px;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.spraay-totals {
+	display: grid;
+	gap: 6px 24px;
+	grid-template-columns: max-content max-content;
+	justify-content: end;
+	margin: 16px 0;
+}
+
+.spraay-totals dt {
+	color: var(--spraay-muted);
+}
+
+.spraay-totals dd {
+	font-variant-numeric: tabular-nums;
+	margin: 0;
+	text-align: right;
+}
+
+.spraay-totals .spraay-totals__grand {
+	color: inherit;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.spraay-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.spraay-wallet {
+	align-items: center;
+	background: #f6f7f7;
+	border-radius: 4px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding: 10px 14px;
+}
+
+.spraay-log {
+	margin-left: 20px;
+}
+
+.spraay-log li.is-success { color: #0a5c1f; font-weight: 600; }
+.spraay-log li.is-warning { color: #8a5a00; }
+.spraay-log li.is-error { color: #b32d2e; font-weight: 600; }
+
+#spraay-builder.is-busy {
+	cursor: progress;
+}
