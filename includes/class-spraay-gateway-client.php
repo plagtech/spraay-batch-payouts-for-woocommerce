@@ -2,8 +2,14 @@
 /**
  * HTTP bridge to the Spraay REST gateway.
  *
- * All blockchain logic lives in the gateway; this class only shapes requests,
- * handles transport errors/retries and normalizes responses.
+ * The gateway estimates batches and builds the unsigned batch transaction;
+ * the merchant's browser wallet signs and broadcasts it. The gateway has no
+ * status endpoint — confirmation is read from the chain (see
+ * Spraay_Reconciliation).
+ *
+ * Amount format: batch endpoints take and return RAW BASE UNITS as decimal
+ * strings (USDC has 6 decimals, so 250 USDC = "250000000"). Recipients and
+ * amounts are parallel arrays, not objects.
  *
  * @package Spraay_Batch_Payouts
  */
@@ -16,6 +22,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Spraay gateway client.
  */
 class Spraay_Gateway_Client {
+
+	/**
+	 * Estimate endpoint (free tier, no auth). As deployed it is a GET taking
+	 * only the recipient count and returns the protocol fee rate (bps) and
+	 * whether the chain can settle — not per-batch amounts. The paid
+	 * POST /api/v1/batch/estimate is x402-gated, so the fee is computed locally
+	 * from the reported rate; the execute response remains authoritative.
+	 */
+	const PATH_ESTIMATE = '/free/estimate-batch';
+
+	/**
+	 * Execute endpoint: returns the unsigned batch transaction (x402-paid).
+	 */
+	const PATH_EXECUTE = '/api/v1/batch/execute';
 
 	/**
 	 * Request timeout in seconds.
@@ -53,68 +73,162 @@ class Spraay_Gateway_Client {
 	}
 
 	/**
-	 * Ask the gateway for a fee estimate (and the transaction to sign).
+	 * Build the request body shared by estimate and execute.
 	 *
-	 * Request body sent to POST /api/v1/batch/estimate:
-	 *   chainId     int     Chain ID (8453 for Base).
-	 *   token       string  Token symbol, "USDC".
-	 *   sender      string  Merchant wallet, when already connected.
-	 *   reference   string  Site-unique batch reference for idempotency.
-	 *   recipients  array   [ { address, amount } ] with decimal-string amounts.
-	 *
-	 * @param array $payload Body as described above.
-	 * @return array|WP_Error Normalized estimate, see normalize_estimate().
+	 * @param string   $chain      Gateway chain name ("base").
+	 * @param string   $token      ERC-20 contract address.
+	 * @param string   $sender     Merchant wallet, or '' if not yet connected.
+	 * @param string[] $recipients Recipient addresses.
+	 * @param string[] $amounts    Base-unit amount strings, same order as $recipients.
+	 * @return array|WP_Error
 	 */
-	public function estimate( array $payload ) {
-		/**
-		 * Filter the estimate request body before it is sent.
-		 *
-		 * @param array $payload Request body.
-		 */
-		$payload  = apply_filters( 'spraay_gateway_estimate_payload', $payload );
-		$response = $this->request( 'POST', '/api/v1/batch/estimate', $payload, true );
+	public static function batch_body( $chain, $token, $sender, array $recipients, array $amounts ) {
+		$recipients = array_values( $recipients );
+		$amounts    = array_values( array_map( 'strval', $amounts ) );
 
-		return is_wp_error( $response ) ? $response : $this->normalize_estimate( $response );
+		if ( ! $recipients || count( $recipients ) !== count( $amounts ) ) {
+			return new WP_Error( 'spraay_gateway_body', __( 'Recipients and amounts must be non-empty lists of the same length.', 'spraay-batch-payouts' ) );
+		}
+		foreach ( $amounts as $amount ) {
+			if ( ! preg_match( '/^[1-9]\d*$/', $amount ) ) {
+				return new WP_Error( 'spraay_gateway_body', __( 'Gateway amounts must be positive whole base-unit strings.', 'spraay-batch-payouts' ) );
+			}
+		}
+
+		$body = array(
+			'chain'      => $chain,
+			'token'      => $token,
+			'recipients' => $recipients,
+			'amounts'    => $amounts,
+		);
+		if ( '' !== $sender ) {
+			$body['sender'] = $sender;
+		}
+		return $body;
 	}
 
 	/**
-	 * Submit a wallet-signed batch for on-chain execution.
+	 * Check that a batch can settle and get the protocol fee rate.
 	 *
-	 * Request body sent to POST /api/v1/batch/execute:
-	 *   batchId    string  Gateway batch ID from the estimate.
-	 *   chainId    int     Chain ID.
-	 *   sender     string  Merchant wallet that signed.
-	 *   txHash     string  Hash of the transaction the wallet broadcast, or
-	 *   signature  string  Signature over the gateway's typed data (relayed mode).
-	 *
-	 * Not retried automatically: a timed-out execute may still have been
-	 * accepted, so the caller reconciles via status() instead of resubmitting.
-	 *
-	 * @param array $payload Body as described above.
-	 * @return array|WP_Error Normalized status, see normalize_status().
+	 * @param int    $recipient_count Recipients in the batch.
+	 * @param string $chain           Gateway chain name ("base").
+	 * @return array|WP_Error {
+	 *     @type bool       $supported Whether the chain can actually settle.
+	 *     @type int        $fee_bps   Protocol fee in basis points.
+	 *     @type float|null $gas_usd   Rough gas estimate in USD.
+	 *     @type array      $raw       Untouched response.
+	 * }
 	 */
-	public function execute( array $payload ) {
+	public function estimate( $recipient_count, $chain ) {
+		$query = array(
+			'recipients' => max( 1, (int) $recipient_count ),
+			'chain'      => (string) $chain,
+		);
+
+		/**
+		 * Filter the estimate query parameters before they are sent.
+		 *
+		 * @param array $query Query parameters.
+		 */
+		$query    = apply_filters( 'spraay_gateway_estimate_payload', $query );
+		$response = $this->request( 'GET', self::PATH_ESTIMATE . '?' . http_build_query( $query, '', '&' ), null, true );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$estimate = isset( $response['estimate'] ) && is_array( $response['estimate'] ) ? $response['estimate'] : $response;
+		$bps      = isset( $estimate['protocolFeeBps'] ) ? filter_var( $estimate['protocolFeeBps'], FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 0, 'max_range' => 1000 ) ) ) : false;
+		if ( false === $bps ) {
+			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway estimate did not include a valid protocol fee rate.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+		}
+
+		$normalized = array(
+			'supported' => ! empty( $estimate['supported'] ),
+			'fee_bps'   => (int) $bps,
+			'gas_usd'   => isset( $estimate['estimatedGasUSD'] ) && is_numeric( $estimate['estimatedGasUSD'] ) ? (float) $estimate['estimatedGasUSD'] : null,
+			'raw'       => $response,
+		);
+
+		/**
+		 * Filter a normalized gateway estimate.
+		 *
+		 * @param array $normalized Normalized estimate.
+		 * @param array $response   Raw response.
+		 */
+		return apply_filters( 'spraay_gateway_estimate_response', $normalized, $response );
+	}
+
+	/**
+	 * Ask the gateway to build the unsigned batch transaction.
+	 *
+	 * Not retried automatically: the endpoint is paid and the gateway rejects
+	 * quick repeats of the same batch with HTTP 409 duplicate_payment_detected.
+	 *
+	 * @param array $body From batch_body(); sender is required.
+	 * @return array|WP_Error {
+	 *     @type array      $transaction { to, data, value, chain_id, gas_limit } — gas_limit is hex.
+	 *     @type array|null $approval    { token, spender, amount } when an ERC-20 approve is needed first.
+	 *     @type array      $batch       { recipient_count, total_amount, fee, total_with_fee } in base units.
+	 *     @type array      $raw         Untouched response.
+	 * }
+	 */
+	public function execute( array $body ) {
+		if ( empty( $body['sender'] ) ) {
+			return new WP_Error( 'spraay_gateway_body', __( 'A connected wallet is required to prepare the transaction.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+		}
+
 		/**
 		 * Filter the execute request body before it is sent.
 		 *
-		 * @param array $payload Request body.
+		 * @param array $body Request body.
 		 */
-		$payload  = apply_filters( 'spraay_gateway_execute_payload', $payload );
-		$response = $this->request( 'POST', '/api/v1/batch/execute', $payload, false );
+		$body     = apply_filters( 'spraay_gateway_execute_payload', $body );
+		$response = $this->request( 'POST', self::PATH_EXECUTE, $body, false );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
 
-		return is_wp_error( $response ) ? $response : $this->normalize_status( $response );
-	}
+		$tx = isset( $response['transaction'] ) && is_array( $response['transaction'] ) ? $response['transaction'] : array();
+		if ( empty( $tx['to'] ) || empty( $tx['data'] ) ) {
+			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway did not return a transaction to sign.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+		}
 
-	/**
-	 * Poll a batch's on-chain status.
-	 *
-	 * @param string $gateway_batch_id Gateway batch ID.
-	 * @return array|WP_Error Normalized status, see normalize_status().
-	 */
-	public function status( $gateway_batch_id ) {
-		$response = $this->request( 'GET', '/api/v1/batch/' . rawurlencode( (string) $gateway_batch_id ) . '/status', null, true );
+		$approval = null;
+		if ( ! empty( $response['approvalRequired'] ) && is_array( $response['approvalRequired'] ) ) {
+			$a        = $response['approvalRequired'];
+			$approval = array(
+				'token'   => isset( $a['token'] ) ? (string) $a['token'] : '',
+				'spender' => isset( $a['spender'] ) ? (string) $a['spender'] : '',
+				'amount'  => isset( $a['amount'] ) ? (string) $a['amount'] : '',
+			);
+		}
 
-		return is_wp_error( $response ) ? $response : $this->normalize_status( $response );
+		$b          = isset( $response['batch'] ) && is_array( $response['batch'] ) ? $response['batch'] : array();
+		$normalized = array(
+			'transaction' => array(
+				'to'        => (string) $tx['to'],
+				'data'      => (string) $tx['data'],
+				'value'     => isset( $tx['value'] ) ? (string) $tx['value'] : '0',
+				'chain_id'  => isset( $tx['chainId'] ) ? (int) $tx['chainId'] : 0,
+				'gas_limit' => isset( $tx['gasLimit'] ) ? (string) $tx['gasLimit'] : '',
+			),
+			'approval'    => $approval,
+			'batch'       => array(
+				'recipient_count' => isset( $b['recipientCount'] ) ? (int) $b['recipientCount'] : 0,
+				'total_amount'    => isset( $b['totalAmount'] ) ? (string) $b['totalAmount'] : '',
+				'fee'             => isset( $b['fee'] ) ? (string) $b['fee'] : '',
+				'total_with_fee'  => isset( $b['totalWithFee'] ) ? (string) $b['totalWithFee'] : '',
+			),
+			'raw'         => $response,
+		);
+
+		/**
+		 * Filter a normalized execute response.
+		 *
+		 * @param array $normalized Normalized response.
+		 * @param array $response   Raw response.
+		 */
+		return apply_filters( 'spraay_gateway_execute_response', $normalized, $response );
 	}
 
 	/**
@@ -208,14 +322,24 @@ class Spraay_Gateway_Client {
 			if ( is_array( $message ) ) {
 				$message = isset( $message['message'] ) ? $message['message'] : wp_json_encode( $message );
 			}
+			$message = (string) $message;
+			$data    = array(
+				'status' => $code,
+				'body'   => $data,
+			);
+
+			if ( 409 === $code && 'duplicate_payment_detected' === $message ) {
+				return new WP_Error( 'spraay_duplicate_payment', __( 'This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again.', 'spraay-batch-payouts' ), $data );
+			}
+			if ( 402 === $code ) {
+				return new WP_Error( 'spraay_payment_required', __( 'The Spraay gateway requires payment (x402) for this request, which this plugin cannot make yet. Contact Spraay about API access for your store.', 'spraay-batch-payouts' ), $data );
+			}
+
 			return new WP_Error(
 				'spraay_gateway_http_' . $code,
 				/* translators: 1: HTTP status code, 2: gateway error message. */
-				sprintf( __( 'Spraay gateway returned HTTP %1$d. %2$s', 'spraay-batch-payouts' ), $code, sanitize_text_field( (string) $message ) ),
-				array(
-					'status' => $code,
-					'body'   => $data,
-				)
+				sprintf( __( 'Spraay gateway returned HTTP %1$d. %2$s', 'spraay-batch-payouts' ), $code, sanitize_text_field( $message ) ),
+				$data
 			);
 		}
 
@@ -225,101 +349,5 @@ class Spraay_Gateway_Client {
 
 		// Unwrap { data: {...} } envelopes.
 		return ( isset( $data['data'] ) && is_array( $data['data'] ) ) ? $data['data'] : $data;
-	}
-
-	/**
-	 * Normalize an estimate response.
-	 *
-	 * @param array $data Decoded gateway response.
-	 * @return array {
-	 *     @type string     $batch_id     Gateway batch ID.
-	 *     @type string     $subtotal     Sum of payouts.
-	 *     @type string     $fee          Spraay fee.
-	 *     @type string     $total        Subtotal + fee (what leaves the wallet).
-	 *     @type array|null $transaction  { to, data, value } for the wallet to send.
-	 *     @type array|null $approval     { token, spender, amount } ERC-20 allowance needed first.
-	 *     @type array|null $typed_data   EIP-712 payload to sign in relayed mode.
-	 *     @type array      $raw          Untouched response.
-	 * }
-	 */
-	private function normalize_estimate( array $data ) {
-		$pick = function ( array $keys ) use ( $data ) {
-			foreach ( $keys as $key ) {
-				if ( isset( $data[ $key ] ) && '' !== $data[ $key ] ) {
-					return $data[ $key ];
-				}
-			}
-			return null;
-		};
-
-		$normalized = array(
-			'batch_id'    => (string) $pick( array( 'batchId', 'batch_id', 'id' ) ),
-			'subtotal'    => (string) $pick( array( 'subtotal', 'amount', 'totalAmount' ) ),
-			'fee'         => (string) $pick( array( 'fee', 'feeAmount', 'fee_amount' ) ),
-			'total'       => (string) $pick( array( 'total', 'totalWithFee', 'total_amount' ) ),
-			'transaction' => is_array( $pick( array( 'transaction', 'tx' ) ) ) ? $pick( array( 'transaction', 'tx' ) ) : null,
-			'approval'    => is_array( $pick( array( 'approval', 'allowance' ) ) ) ? $pick( array( 'approval', 'allowance' ) ) : null,
-			'typed_data'  => is_array( $pick( array( 'typedData', 'typed_data' ) ) ) ? $pick( array( 'typedData', 'typed_data' ) ) : null,
-			'raw'         => $data,
-		);
-
-		/**
-		 * Filter a normalized gateway estimate.
-		 *
-		 * @param array $normalized Normalized estimate.
-		 * @param array $data       Raw response.
-		 */
-		return apply_filters( 'spraay_gateway_estimate_response', $normalized, $data );
-	}
-
-	/**
-	 * Normalize an execute/status response.
-	 *
-	 * @param array $data Decoded gateway response.
-	 * @return array { status: pending|confirmed|failed, tx_hash: string, confirmed_at: string|null, error: string, raw: array }
-	 */
-	private function normalize_status( array $data ) {
-		$raw_status = strtolower( (string) ( isset( $data['status'] ) ? $data['status'] : '' ) );
-		$map        = array(
-			'confirmed' => Spraay_Batch::STATUS_CONFIRMED,
-			'success'   => Spraay_Batch::STATUS_CONFIRMED,
-			'completed' => Spraay_Batch::STATUS_CONFIRMED,
-			'settled'   => Spraay_Batch::STATUS_CONFIRMED,
-			'failed'    => Spraay_Batch::STATUS_FAILED,
-			'reverted'  => Spraay_Batch::STATUS_FAILED,
-			'error'     => Spraay_Batch::STATUS_FAILED,
-		);
-
-		$tx_hash = '';
-		foreach ( array( 'txHash', 'tx_hash', 'transactionHash' ) as $key ) {
-			if ( ! empty( $data[ $key ] ) && preg_match( '/^0x[0-9a-fA-F]{64}$/', (string) $data[ $key ] ) ) {
-				$tx_hash = strtolower( $data[ $key ] );
-				break;
-			}
-		}
-
-		$confirmed_at = null;
-		foreach ( array( 'confirmedAt', 'confirmed_at' ) as $key ) {
-			if ( ! empty( $data[ $key ] ) && false !== strtotime( (string) $data[ $key ] ) ) {
-				$confirmed_at = gmdate( 'Y-m-d H:i:s', strtotime( (string) $data[ $key ] ) );
-				break;
-			}
-		}
-
-		$normalized = array(
-			'status'       => isset( $map[ $raw_status ] ) ? $map[ $raw_status ] : Spraay_Batch::STATUS_PENDING,
-			'tx_hash'      => $tx_hash,
-			'confirmed_at' => $confirmed_at,
-			'error'        => isset( $data['error'] ) && is_string( $data['error'] ) ? sanitize_text_field( $data['error'] ) : '',
-			'raw'          => $data,
-		);
-
-		/**
-		 * Filter a normalized gateway status.
-		 *
-		 * @param array $normalized Normalized status.
-		 * @param array $data       Raw response.
-		 */
-		return apply_filters( 'spraay_gateway_status_response', $normalized, $data );
 	}
 }

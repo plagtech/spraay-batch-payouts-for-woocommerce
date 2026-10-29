@@ -63,10 +63,6 @@ $spraay_grand    = Spraay_Amount::from_units( Spraay_Amount::to_units( $batch['t
 					</td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Gateway reference', 'spraay-batch-payouts' ); ?></th>
-					<td><?php echo $batch['gateway_batch_id'] ? '<code>' . esc_html( $batch['gateway_batch_id'] ) . '</code>' : '&mdash;'; ?></td>
-				</tr>
-				<tr>
 					<th><?php esc_html_e( 'Created', 'spraay-batch-payouts' ); ?></th>
 					<td>
 						<?php

@@ -29,7 +29,8 @@ Batch-pay suppliers, vendors, affiliates and contractors in USDC on Base from yo
 * WooCommerce integration that works without any multi-vendor plugin (via order supplier fields), and also reads WooCommerce Product Vendors commissions and Dokan vendor earnings when those plugins are active
 * Duplicate-payment protection: orders already in a pending or confirmed batch cannot be paid again
 * Batch history with status filters, date range filters, per-batch detail and CSV export
-* Background status checks via WP-Cron
+* Background confirmation checks against the Base blockchain via WP-Cron
+* Before you sign, the plugin decodes the gateway transaction and refuses it unless every recipient, amount, token, contract and approval matches what you confirmed
 * Compatible with WooCommerce High-Performance Order Storage (HPOS)
 
 = Noncustodial =
@@ -48,13 +49,12 @@ Completed orders carrying these fields appear as obligations in the batch builde
 
 == External services ==
 
-This plugin connects to the **Spraay gateway** (`https://gateway.spraay.app` by default, configurable in Settings) to estimate and execute payout batches and to check their on-chain status. It is required for the plugin to work.
+This plugin connects to the **Spraay gateway** (`https://gateway.spraay.app` by default, configurable in Settings) to estimate payout batches and to build the batch transaction your wallet signs. It is required for the plugin to work.
 
 **What is sent and when:**
 
-* When you request an estimate: the network (chain ID), token symbol (USDC), a batch reference generated from your site URL hash and batch number, each recipient's wallet address and payout amount, and — if connected — your wallet address.
-* When you sign and submit a batch: the gateway batch ID, network, your wallet address, and the transaction hash or signature produced by your wallet.
-* When checking status (on the batch screens and every five minutes via WP-Cron while a batch is pending): the gateway batch ID.
+* When you request an estimate (`/free/estimate-batch`): the network name (`base`), the USDC contract address, each recipient's wallet address and payout amount, and — if your wallet is connected — your wallet address.
+* When you approve and sign a batch (`/api/v1/batch/execute`): the same data plus your wallet address. The gateway returns an unsigned transaction; your wallet signs and broadcasts it. Nothing is sent to the gateway after signing.
 * Every request includes your site's home URL in the User-Agent header, and your gateway API key if you configured one.
 
 Recipient labels, emails and notes are never sent.
@@ -63,7 +63,9 @@ Spraay gateway: [Terms of Service](https://spraay.app/terms) · [Privacy Policy]
 
 **Content delivery:** the batch builder loads the ethers.js library from cdnjs (`https://cdnjs.cloudflare.com`), operated by Cloudflare, with a subresource-integrity check. cdnjs receives standard request data such as your IP address and browser user agent. [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/)
 
-**Blockchain:** your browser wallet communicates with the Base network through the RPC provider configured in your wallet. Transactions on Base are public and permanent.
+**Base network RPC:** to confirm payouts, your WordPress server sends the batch transaction hash to the public Base RPC endpoint (`https://mainnet.base.org`, operated by Coinbase; changeable with the `spraay_rpc_url` filter) using `eth_getTransactionReceipt`. This happens on the batch screens and every five minutes via WP-Cron while a batch is pending. [Base Privacy Policy](https://www.coinbase.com/legal/privacy)
+
+Your browser wallet communicates with Base through the RPC provider configured in the wallet. Transactions on Base are public and permanent.
 
 == Frequently Asked Questions ==
 
@@ -81,11 +83,11 @@ No. Spraay never holds your funds and this plugin never has access to your priva
 
 = What are the fees? =
 
-Spraay charges a 0.3% protocol fee on each batch, shown on the review screen before you sign. You also pay the Base network gas fee (in ETH) from your wallet. The plugin itself is free.
+Spraay charges a 0.3% protocol fee on each batch, added on top of the payouts, shown on the review screen before you sign. You also pay the Base network gas fee (in ETH) from your wallet. The plugin itself is free.
 
 = Which network and token? =
 
-USDC on Base (chain ID 8453). Base Sepolia testnet is available in Settings for testing.
+USDC on Base (chain ID 8453). Payouts go through the Spraay batch contract at 0x1646452F98E36A3c9Cfc3eDD8868221E207B5eEC.
 
 = What do I need in my wallet? =
 
@@ -114,7 +116,7 @@ Uninstalling (deleting) the plugin removes its tables, including payout history,
 == Changelog ==
 
 = 0.1.0 =
-* Initial release: recipients, batch builder, gateway estimation and execution, wallet signing, reconciliation, batch history and CSV import/export.
+* Initial release: recipients, batch builder, gateway estimation and transaction building, verified wallet signing, on-chain reconciliation, batch history and CSV import/export.
 
 == Upgrade Notice ==
 

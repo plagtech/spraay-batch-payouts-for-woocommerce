@@ -7,226 +7,190 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28\n"
+"POT-Creation-Date: 2026-10-29\n"
 "X-Domain: spraay-batch-payouts\n"
 
-#: admin/js/spraay-admin.js:127 admin/js/spraay-admin.js:139
+#: admin/js/spraay-admin.js:126 admin/js/spraay-admin.js:138
 msgid "Something went wrong."
 msgstr ""
 
-#: admin/js/spraay-admin.js:130
+#: admin/js/spraay-admin.js:129
 msgid "You rejected the request in your wallet. Nothing was sent."
 msgstr ""
 
-#: admin/js/spraay-admin.js:131
+#: admin/js/spraay-admin.js:130
 msgid "No browser wallet detected. Install MetaMask, Coinbase Wallet or another EVM wallet and reload."
 msgstr ""
 
-#: admin/js/spraay-admin.js:132
+#: admin/js/spraay-admin.js:131
 msgid "The wallet library (ethers.js) failed to load. Check your connection or content blockers and reload."
 msgstr ""
 
-#: admin/js/spraay-admin.js:133
+#: admin/js/spraay-admin.js:132
 msgid "Switch your wallet to %s and try again."
 msgstr ""
 
-#: admin/js/spraay-admin.js:134
+#: admin/js/spraay-admin.js:133
 msgid "Your wallet does not have enough ETH on Base to pay network gas."
 msgstr ""
 
-#: admin/js/spraay-admin.js:192
+#: admin/js/spraay-admin.js:191
 msgid "%s is already in this batch."
 msgstr ""
 
-#: admin/js/spraay-admin.js:202 includes/class-spraay-batch.php:293
+#: admin/js/spraay-admin.js:201 includes/class-spraay-batch.php:293
 msgid "A batch can contain at most %d recipients."
 msgstr ""
 
-#: admin/js/spraay-admin.js:220 admin/views/new-batch.php:124
+#: admin/js/spraay-admin.js:219 admin/views/new-batch.php:124
 msgid "No recipients added yet."
 msgstr ""
 
-#: admin/js/spraay-admin.js:229
+#: admin/js/spraay-admin.js:228
 msgid "Amount for %s"
 msgstr ""
 
-#: admin/js/spraay-admin.js:237
+#: admin/js/spraay-admin.js:236
 msgid "Remove %s"
 msgstr ""
 
-#: admin/js/spraay-admin.js:284
+#: admin/js/spraay-admin.js:283
 msgid "%1$s — %2$s USDC from %3$d order(s)"
 msgstr ""
 
-#: admin/js/spraay-admin.js:285
+#: admin/js/spraay-admin.js:284
 msgid "(unnamed)"
 msgstr ""
 
-#: admin/js/spraay-admin.js:291
+#: admin/js/spraay-admin.js:290
 msgid "These payees have no saved recipient with a wallet address, so they were not added. Create a recipient for each (link the vendor ID or use the same label), then import again:"
 msgstr ""
 
-#: admin/js/spraay-admin.js:316
+#: admin/js/spraay-admin.js:315
 msgid "Added obligations for %d recipient(s)."
 msgstr ""
 
-#: admin/js/spraay-admin.js:317
+#: admin/js/spraay-admin.js:316
 msgid "No payable obligations found for that period."
 msgstr ""
 
-#: admin/js/spraay-admin.js:332
+#: admin/js/spraay-admin.js:331
 msgid "Add at least one recipient."
 msgstr ""
 
-#: admin/js/spraay-admin.js:337 includes/class-spraay-batch.php:317
+#: admin/js/spraay-admin.js:336 includes/class-spraay-batch.php:317
 msgid "Enter a positive amount (max 6 decimals) for %s."
 msgstr ""
 
-#: admin/js/spraay-admin.js:405
+#: admin/js/spraay-admin.js:403
 msgid "Connected: %s"
 msgstr ""
 
-#: admin/js/spraay-admin.js:406 admin/views/new-batch.php:187
+#: admin/js/spraay-admin.js:404 admin/views/new-batch.php:187
 msgid "Not connected"
 msgstr ""
 
-#: admin/js/spraay-admin.js:408
+#: admin/js/spraay-admin.js:406
 msgid "Reconnect"
 msgstr ""
 
-#: admin/js/spraay-admin.js:408 admin/views/new-batch.php:192
+#: admin/js/spraay-admin.js:406 admin/views/new-batch.php:192
 msgid "Connect wallet"
 msgstr ""
 
-#: admin/js/spraay-admin.js:414
+#: admin/js/spraay-admin.js:412
 msgid "Balance: %s"
 msgstr ""
 
-#: admin/js/spraay-admin.js:440
+#: admin/js/spraay-admin.js:438
 msgid "Transaction: "
 msgstr ""
 
-#: admin/js/spraay-admin.js:453
-msgid "The gateway returned an invalid transaction. Nothing was signed."
+#: admin/js/spraay-admin.js:448
+msgid "The transaction from the gateway did not match the batch you confirmed, so nothing was signed."
 msgstr ""
 
-#: admin/js/spraay-admin.js:456
-msgid "The gateway transaction asks for ETH, which a USDC payout should not need. Nothing was signed."
-msgstr ""
-
-#: admin/js/spraay-admin.js:461
-msgid "The gateway asked to approve an unexpected token. Nothing was signed."
-msgstr ""
-
-#: admin/js/spraay-admin.js:464
-msgid "The gateway returned an invalid spender address. Nothing was signed."
-msgstr ""
-
-#: admin/js/spraay-admin.js:468
-msgid "The gateway signature request is for a different network. Nothing was signed."
-msgstr ""
-
-#: admin/js/spraay-admin.js:474
+#: admin/js/spraay-admin.js:459
 msgid "Tick the confirmation box first."
 msgstr ""
 
-#: admin/js/spraay-admin.js:488
-msgid "The estimate changed for this wallet. Review the new totals and confirm again."
-msgstr ""
-
-#: admin/js/spraay-admin.js:500
+#: admin/js/spraay-admin.js:472
 msgid "Insufficient %1$s: the batch needs %2$s but the wallet holds %3$s."
 msgstr ""
 
-#: admin/js/spraay-admin.js:516
-msgid "Batch approved."
+#: admin/js/spraay-admin.js:512
+msgid "Batch approved and transaction verified."
 msgstr ""
 
-#: admin/js/spraay-admin.js:534
-msgid "Your transaction %s was broadcast, but this site could not record it (%s). Do NOT sign again. Contact support with the transaction hash."
-msgstr ""
-
-#: admin/js/spraay-admin.js:535
-msgid "Transaction broadcast but not recorded. Do not resubmit."
-msgstr ""
-
-#: admin/js/spraay-admin.js:542
-msgid "Gateway did not acknowledge yet (%s). The transaction is tracked and will be reconciled automatically."
-msgstr ""
-
-#: admin/js/spraay-admin.js:557
-msgid "Waiting for your signature in the wallet…"
-msgstr ""
-
-#: admin/js/spraay-admin.js:559
-msgid "Signed. Sending to the Spraay gateway…"
-msgstr ""
-
-#: admin/js/spraay-admin.js:564
+#: admin/js/spraay-admin.js:520
 msgid "Approve exactly %s in your wallet so Spraay can distribute it…"
 msgstr ""
 
-#: admin/js/spraay-admin.js:565
+#: admin/js/spraay-admin.js:521
 msgid "Approval sent. Waiting for confirmation…"
 msgstr ""
 
-#: admin/js/spraay-admin.js:566
+#: admin/js/spraay-admin.js:522
 msgid "Approval confirmed."
 msgstr ""
 
-#: admin/js/spraay-admin.js:571
+#: admin/js/spraay-admin.js:527
 msgid "Confirm the batch payment in your wallet…"
 msgstr ""
 
-#: admin/js/spraay-admin.js:574
-msgid "Transaction broadcast. Registering with the Spraay gateway…"
+#: admin/js/spraay-admin.js:536
+msgid "Transaction broadcast. Recording it…"
 msgstr ""
 
-#: admin/js/spraay-admin.js:576
-msgid "The gateway estimate contained nothing to sign. Re-run the estimate."
+#: admin/js/spraay-admin.js:543
+msgid "Your transaction %1$s was broadcast, but this site could not record it (%2$s). Do NOT sign again. Contact support with the transaction hash."
 msgstr ""
 
-#: admin/js/spraay-admin.js:620
+#: admin/js/spraay-admin.js:544
+msgid "Transaction broadcast but not recorded. Do not resubmit."
+msgstr ""
+
+#: admin/js/spraay-admin.js:585
 msgid "Confirmed on-chain. Payouts delivered."
 msgstr ""
 
-#: admin/js/spraay-admin.js:621
+#: admin/js/spraay-admin.js:586
 msgid "Batch confirmed."
 msgstr ""
 
-#: admin/js/spraay-admin.js:625
+#: admin/js/spraay-admin.js:590
 msgid "The batch failed on-chain. No further action was taken; check the transaction for details."
 msgstr ""
 
-#: admin/js/spraay-admin.js:626
+#: admin/js/spraay-admin.js:591
 msgid "Batch failed."
 msgstr ""
 
-#: admin/js/spraay-admin.js:635
+#: admin/js/spraay-admin.js:600
 msgid "Waiting for on-chain confirmation…"
 msgstr ""
 
-#: admin/js/spraay-admin.js:649
+#: admin/js/spraay-admin.js:614
 msgid "Still pending. You can leave this page — status is checked in the background and shown in Batch History."
 msgstr ""
 
-#: admin/js/spraay-admin.js:697
+#: admin/js/spraay-admin.js:662
 msgid "No matching recipients."
 msgstr ""
 
-#: admin/js/spraay-admin.js:758
+#: admin/js/spraay-admin.js:723
 msgid "Choose a CSV file first."
 msgstr ""
 
-#: admin/js/spraay-admin.js:774
+#: admin/js/spraay-admin.js:739
 msgid "Imported %1$d row(s): %2$d new recipient(s), %3$d updated."
 msgstr ""
 
-#: admin/js/spraay-admin.js:785
+#: admin/js/spraay-admin.js:750
 msgid "Draft batch #%d saved."
 msgstr ""
 
-#: admin/js/spraay-admin.js:828
+#: admin/js/spraay-admin.js:793
 msgid "This batch was estimated earlier. Get a fresh estimate before signing."
 msgstr ""
 
@@ -258,7 +222,7 @@ msgstr ""
 msgid "Awaiting confirmation"
 msgstr ""
 
-#: admin/views/dashboard.php:44 admin/views/dashboard.php:61 admin/views/new-batch.php:130 admin/views/partials/batch-detail.php:48 admin/views/partials/batch-detail.php:103 admin/views/recipients.php:24 includes/class-spraay-admin.php:89 includes/class-spraay-batches-list-table.php:69
+#: admin/views/dashboard.php:44 admin/views/dashboard.php:61 admin/views/new-batch.php:130 admin/views/partials/batch-detail.php:48 admin/views/partials/batch-detail.php:99 admin/views/recipients.php:24 includes/class-spraay-admin.php:89 includes/class-spraay-batches-list-table.php:69
 msgid "Recipients"
 msgstr ""
 
@@ -274,7 +238,7 @@ msgstr ""
 msgid "Batch"
 msgstr ""
 
-#: admin/views/dashboard.php:59 admin/views/partials/batch-detail.php:111 includes/class-spraay-batches-list-table.php:66
+#: admin/views/dashboard.php:59 admin/views/partials/batch-detail.php:107 includes/class-spraay-batches-list-table.php:66
 msgid "Status"
 msgstr ""
 
@@ -282,7 +246,7 @@ msgstr ""
 msgid "Payouts"
 msgstr ""
 
-#: admin/views/dashboard.php:62 admin/views/partials/batch-detail.php:70 includes/class-spraay-batches-list-table.php:71
+#: admin/views/dashboard.php:62 admin/views/partials/batch-detail.php:66 includes/class-spraay-batches-list-table.php:71
 msgid "Created"
 msgstr ""
 
@@ -414,15 +378,15 @@ msgstr ""
 msgid "New wallets in a recipients CSV are saved as recipients. Commission exports are matched to recipients by vendor name."
 msgstr ""
 
-#: admin/views/new-batch.php:116 admin/views/new-batch.php:156 admin/views/partials/batch-detail.php:107
+#: admin/views/new-batch.php:116 admin/views/new-batch.php:156 admin/views/partials/batch-detail.php:103
 msgid "Recipient"
 msgstr ""
 
-#: admin/views/new-batch.php:117 admin/views/new-batch.php:157 admin/views/new-batch.php:184 admin/views/partials/batch-detail.php:108 includes/class-spraay-recipients-list-table.php:43
+#: admin/views/new-batch.php:117 admin/views/new-batch.php:157 admin/views/new-batch.php:184 admin/views/partials/batch-detail.php:104 includes/class-spraay-recipients-list-table.php:43
 msgid "Wallet"
 msgstr ""
 
-#: admin/views/new-batch.php:118 admin/views/partials/batch-detail.php:109
+#: admin/views/new-batch.php:118 admin/views/partials/batch-detail.php:105
 msgid "Orders"
 msgstr ""
 
@@ -498,35 +462,31 @@ msgstr ""
 msgid "Transaction"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:66
-msgid "Gateway reference"
-msgstr ""
-
-#: admin/views/partials/batch-detail.php:76
+#: admin/views/partials/batch-detail.php:72
 msgid "by %s"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:82
+#: admin/views/partials/batch-detail.php:78
 msgid "Approved by"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:86 includes/class-spraay-batch.php:41 includes/class-spraay-batches-list-table.php:72
+#: admin/views/partials/batch-detail.php:82 includes/class-spraay-batch.php:41 includes/class-spraay-batches-list-table.php:72
 msgid "Confirmed"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:93
+#: admin/views/partials/batch-detail.php:89
 msgid "Refresh status"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:96
+#: admin/views/partials/batch-detail.php:92
 msgid "Continue in builder"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:110
+#: admin/views/partials/batch-detail.php:106
 msgid "Amount"
 msgstr ""
 
-#: admin/views/partials/batch-detail.php:117
+#: admin/views/partials/batch-detail.php:113
 msgid "(deleted recipient)"
 msgstr ""
 
@@ -635,7 +595,7 @@ msgid "Only if your Spraay gateway requires one. This is a gateway API key, not 
 msgstr ""
 
 #: admin/views/settings.php:57
-msgid "Use Base for real payouts. Base Sepolia is for testing with testnet USDC."
+msgid "The Spraay gateway settles USDC batches on Base."
 msgstr ""
 
 #: admin/views/settings.php:61
@@ -678,49 +638,49 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: includes/class-spraay-admin.php:254
+#: includes/class-spraay-admin.php:256
 msgid "The gateway URL must be a valid https:// URL. The previous value was kept."
 msgstr ""
 
-#: includes/class-spraay-admin.php:370 includes/class-spraay-batch.php:200 includes/class-spraay-batch.php:376 includes/class-spraay-batch.php:654 includes/class-spraay-reconciliation.php:109 includes/class-spraay-rest-api.php:302
+#: includes/class-spraay-admin.php:372 includes/class-spraay-batch.php:200 includes/class-spraay-batch.php:376 includes/class-spraay-batch.php:724 includes/class-spraay-reconciliation.php:115 includes/class-spraay-rest-api.php:312
 msgid "Batch not found."
 msgstr ""
 
-#: includes/class-spraay-admin.php:450
+#: includes/class-spraay-admin.php:452
 msgid "Recipient updated."
 msgstr ""
 
-#: includes/class-spraay-admin.php:450
+#: includes/class-spraay-admin.php:452
 msgid "Recipient added."
 msgstr ""
 
-#: includes/class-spraay-admin.php:464
+#: includes/class-spraay-admin.php:466
 msgid "Recipient deleted."
 msgstr ""
 
-#: includes/class-spraay-admin.php:522
+#: includes/class-spraay-admin.php:524
 msgid "Import complete: %1$d added, %2$d updated."
 msgstr ""
 
-#: includes/class-spraay-admin.php:569
+#: includes/class-spraay-admin.php:571
 msgid "Status refreshed: %s."
 msgstr ""
 
-#: includes/class-spraay-admin.php:585
+#: includes/class-spraay-admin.php:587
 msgid "Draft batch deleted."
 msgstr ""
 
-#: includes/class-spraay-admin.php:601
+#: includes/class-spraay-admin.php:603
 msgid "You do not have permission to manage Spraay payouts."
 msgstr ""
 
-#: includes/class-spraay-admin.php:495
+#: includes/class-spraay-admin.php:497
 msgid "%d recipient deleted."
 msgid_plural "%d recipients deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-spraay-admin.php:498
+#: includes/class-spraay-admin.php:500
 msgid "%d was kept because it is part of a submitted batch."
 msgid_plural "%d were kept because they are part of submitted batches."
 msgstr[0] ""
@@ -770,47 +730,75 @@ msgstr ""
 msgid "This batch has already been submitted."
 msgstr ""
 
-#: includes/class-spraay-batch.php:382 includes/class-spraay-batch.php:493
+#: includes/class-spraay-batch.php:382 includes/class-spraay-batch.php:474
 msgid "Connected wallet address is invalid."
 msgstr ""
 
-#: includes/class-spraay-batch.php:410
-msgid "The gateway estimate did not include a batch ID."
+#: includes/class-spraay-batch.php:400
+msgid "The Spraay gateway reports that it cannot currently settle batches on this network."
 msgstr ""
 
-#: includes/class-spraay-batch.php:416
-msgid "The gateway estimate total does not match this batch. Nothing was submitted."
-msgstr ""
-
-#: includes/class-spraay-batch.php:469
+#: includes/class-spraay-batch.php:451
 msgid "Only estimated batches can be approved. Re-run the estimate."
 msgstr ""
 
-#: includes/class-spraay-batch.php:496
-msgid "Transaction hash is invalid."
-msgstr ""
-
-#: includes/class-spraay-batch.php:499
-msgid "Signature is invalid."
-msgstr ""
-
-#: includes/class-spraay-batch.php:502
-msgid "A transaction hash or signature is required."
-msgstr ""
-
-#: includes/class-spraay-batch.php:505
+#: includes/class-spraay-batch.php:477 includes/class-spraay-batch.php:578
 msgid "The batch must be reviewed and approved before execution."
 msgstr ""
 
-#: includes/class-spraay-batch.php:512
+#: includes/class-spraay-batch.php:484
 msgid "Order(s) %s were paid by another batch since this one was built. Edit the batch and remove them."
 msgstr ""
 
-#: includes/class-spraay-batch.php:532
+#: includes/class-spraay-batch.php:493 includes/class-spraay-reconciliation.php:147
+msgid "This batch is on an unsupported network."
+msgstr ""
+
+#: includes/class-spraay-batch.php:507
+msgid "transaction is not addressed to the Spraay contract"
+msgstr ""
+
+#: includes/class-spraay-batch.php:510
+msgid "transaction is for a different network"
+msgstr ""
+
+#: includes/class-spraay-batch.php:513
+msgid "transaction asks for ETH"
+msgstr ""
+
+#: includes/class-spraay-batch.php:516
+msgid "approval is for an unexpected token or spender"
+msgstr ""
+
+#: includes/class-spraay-batch.php:519
+msgid "payout total differs from this batch"
+msgstr ""
+
+#: includes/class-spraay-batch.php:525
+msgid "The gateway transaction was rejected (%s). Nothing was signed."
+msgstr ""
+
+#: includes/class-spraay-batch.php:564
+msgid "Transaction hash is invalid."
+msgstr ""
+
+#: includes/class-spraay-batch.php:575
+msgid "This batch was already submitted with a different transaction."
+msgstr ""
+
+#: includes/class-spraay-batch.php:595
 msgid "This batch is not awaiting execution (it may already have been submitted)."
 msgstr ""
 
-#: includes/class-spraay-batch.php:657
+#: includes/class-spraay-batch.php:631
+msgid "The configured network or token is not supported."
+msgstr ""
+
+#: includes/class-spraay-batch.php:638
+msgid "A recipient in this batch was deleted. Edit the batch and remove it."
+msgstr ""
+
+#: includes/class-spraay-batch.php:727
 msgid "Submitted batches are kept as payout records and cannot be deleted."
 msgstr ""
 
@@ -890,19 +878,47 @@ msgstr ""
 msgid "Line %d: missing vendor or invalid commission amount."
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:131
+#: includes/class-spraay-gateway-client.php:90
+msgid "Recipients and amounts must be non-empty lists of the same length."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:94
+msgid "Gateway amounts must be positive whole base-unit strings."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:142
+msgid "The gateway estimate did not include a valid protocol fee rate."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:177
+msgid "A connected wallet is required to prepare the transaction."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:193
+msgid "The gateway did not return a transaction to sign."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:245
 msgid "The Spraay gateway URL must be an https:// URL. Check the plugin settings."
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:199
+#: includes/class-spraay-gateway-client.php:313
 msgid "Could not reach the Spraay gateway: %s"
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:214
+#: includes/class-spraay-gateway-client.php:332
+msgid "This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:335
+msgid "The Spraay gateway requires payment (x402) for this request, which this plugin cannot make yet. Contact Spraay about API access for your store."
+msgstr ""
+
+#: includes/class-spraay-gateway-client.php:341
 msgid "Spraay gateway returned HTTP %1$d. %2$s"
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:223
+#: includes/class-spraay-gateway-client.php:347
 msgid "The Spraay gateway returned an unreadable response."
 msgstr ""
 
@@ -970,11 +986,31 @@ msgstr ""
 msgid "No recipients yet. Add one or import a CSV."
 msgstr ""
 
-#: includes/class-spraay-reconciliation.php:55
+#: includes/class-spraay-reconciliation.php:61
 msgid "Every five minutes (Spraay reconciliation)"
 msgstr ""
 
-#: includes/class-spraay-rest-api.php:345
+#: includes/class-spraay-reconciliation.php:163
+msgid "The transaction was never mined (dropped or replaced in the wallet)."
+msgstr ""
+
+#: includes/class-spraay-reconciliation.php:181
+msgid "The transaction reverted on-chain. No funds were sent."
+msgstr ""
+
+#: includes/class-spraay-reconciliation.php:189
+msgid "The recorded transaction did not call the Spraay contract."
+msgstr ""
+
+#: includes/class-spraay-reconciliation.php:244
+msgid "Could not reach the network RPC: %s"
+msgstr ""
+
+#: includes/class-spraay-reconciliation.php:249
+msgid "The network RPC returned an error. Status will be checked again shortly."
+msgstr ""
+
+#: includes/class-spraay-rest-api.php:355
 msgid "Confirm that you have reviewed the batch."
 msgstr ""
 

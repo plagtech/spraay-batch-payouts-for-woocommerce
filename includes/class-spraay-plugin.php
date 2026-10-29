@@ -230,8 +230,12 @@ CREATE TABLE {$items} (
 	 * @return array
 	 */
 	public static function get_settings() {
-		$saved = get_option( self::OPTION_SETTINGS, array() );
-		return wp_parse_args( is_array( $saved ) ? $saved : array(), self::default_settings() );
+		$saved    = get_option( self::OPTION_SETTINGS, array() );
+		$settings = wp_parse_args( is_array( $saved ) ? $saved : array(), self::default_settings() );
+		if ( ! self::get_chain( $settings['chain_id'] ) ) {
+			$settings['chain_id'] = 8453;
+		}
+		return $settings;
 	}
 
 	/**
@@ -240,25 +244,18 @@ CREATE TABLE {$items} (
 	 * @return array
 	 */
 	public static function supported_chains() {
+		// The gateway only settles on its own allowlist ("base", "peaq"), so
+		// testnets are not offered.
 		$chains = array(
-			8453  => array(
-				'name'     => 'Base',
-				'rpc_url'  => 'https://mainnet.base.org',
-				'explorer' => 'https://basescan.org',
-				'tokens'   => array(
+			8453 => array(
+				'name'            => 'Base',
+				'gateway_chain'   => 'base',
+				'rpc_url'         => 'https://mainnet.base.org',
+				'explorer'        => 'https://basescan.org',
+				'spraay_contract' => '0x1646452F98E36A3c9Cfc3eDD8868221E207B5eEC',
+				'tokens'          => array(
 					'USDC' => array(
 						'address'  => '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-						'decimals' => 6,
-					),
-				),
-			),
-			84532 => array(
-				'name'     => 'Base Sepolia (testnet)',
-				'rpc_url'  => 'https://sepolia.base.org',
-				'explorer' => 'https://sepolia.basescan.org',
-				'tokens'   => array(
-					'USDC' => array(
-						'address'  => '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
 						'decimals' => 6,
 					),
 				),

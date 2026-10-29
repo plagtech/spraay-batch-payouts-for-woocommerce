@@ -83,11 +83,13 @@ class Spraay_Amount {
 	 * Local fee preview in base units, rounded up. The gateway estimate is
 	 * authoritative; this is only shown before an estimate exists.
 	 *
-	 * @param int $units Payout total in base units.
+	 * @param int      $units Payout total in base units.
+	 * @param int|null $bps   Fee rate in basis points; defaults to FEE_BPS.
 	 * @return int
 	 */
-	public static function fee_units( $units ) {
-		return intdiv( (int) $units * self::FEE_BPS + 9999, 10000 );
+	public static function fee_units( $units, $bps = null ) {
+		$bps = null === $bps ? self::FEE_BPS : (int) $bps;
+		return intdiv( (int) $units * $bps + 9999, 10000 );
 	}
 
 	/**

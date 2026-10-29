@@ -44,7 +44,6 @@
 		batchId: config.batchId || 0,
 		rows: [],
 		estimate: null,
-		estimateSender: '',
 		account: '',
 		busy: false,
 	};
@@ -366,7 +365,6 @@
 			data: { sender: state.account || '' },
 		} );
 		state.estimate = estimate;
-		state.estimateSender = state.account || '';
 		return estimate;
 	}
 
@@ -442,33 +440,20 @@
 	}
 
 	/**
-	 * Refuse gateway payloads that don't match what the merchant reviewed.
+	 * Show why a gateway transaction was refused and stop.
 	 *
-	 * @param {Object} estimate Estimate.
+	 * @param {string[]} problems Verification failures.
 	 */
-	function assertSafeEstimate( estimate ) {
-		var tx = estimate.transaction;
-		if ( tx ) {
-			if ( ! Wallet.isAddress( tx.to ) || ! /^0x[0-9a-fA-F]*$/.test( tx.data || '' ) ) {
-				throw new Error( __( 'The gateway returned an invalid transaction. Nothing was signed.', DOMAIN ) );
-			}
-			if ( tx.value && BigInt( tx.value ) !== 0n ) {
-				throw new Error( __( 'The gateway transaction asks for ETH, which a USDC payout should not need. Nothing was signed.', DOMAIN ) );
-			}
-		}
-		if ( estimate.approval ) {
-			if ( estimate.approval.token && ! Wallet.sameAddress( estimate.approval.token, config.token.address ) ) {
-				throw new Error( __( 'The gateway asked to approve an unexpected token. Nothing was signed.', DOMAIN ) );
-			}
-			if ( ! Wallet.isAddress( estimate.approval.spender ) ) {
-				throw new Error( __( 'The gateway returned an invalid spender address. Nothing was signed.', DOMAIN ) );
-			}
-		}
-		if ( estimate.typed_data && estimate.typed_data.domain && estimate.typed_data.domain.chainId && Number( estimate.typed_data.domain.chainId ) !== Number( config.chain.id ) ) {
-			throw new Error( __( 'The gateway signature request is for a different network. Nothing was signed.', DOMAIN ) );
-		}
+	function refuseTransaction( problems ) {
+		var err = new Error( __( 'The transaction from the gateway did not match the batch you confirmed, so nothing was signed.', DOMAIN ) );
+		err.details = problems;
+		throw err;
 	}
 
+	/**
+	 * Flow: approve -> gateway builds unsigned tx -> verify -> USDC allowance
+	 * -> wallet sends tx -> record hash -> poll the chain.
+	 */
 	async function signAndSubmit() {
 		if ( ! $( 'confirm' ).checked ) {
 			throw new Error( __( 'Tick the confirmation box first.', DOMAIN ) );
@@ -479,20 +464,7 @@
 		await Wallet.ensureChain( config.chain );
 		state.account = await Wallet.getAddress();
 
-		// The transaction is built for a specific sender; re-estimate if the wallet changed.
-		var reviewedTotal = state.estimate.total;
-		if ( ! Wallet.sameAddress( state.estimateSender, state.account ) ) {
-			await requestEstimate();
-			renderReview( state.estimate );
-			if ( state.estimate.total !== reviewedTotal ) {
-				throw new Error( __( 'The estimate changed for this wallet. Review the new totals and confirm again.', DOMAIN ) );
-			}
-			$( 'confirm' ).checked = true;
-		}
-
 		var estimate = state.estimate;
-		assertSafeEstimate( estimate );
-
 		var totalUnits = toUnits( estimate.total );
 		var balance = await Wallet.getTokenBalance( config.token.address );
 		if ( balance < totalUnits ) {
@@ -510,58 +482,42 @@
 			data: { confirm: true },
 		} );
 
+		var prepared = await apiFetch( {
+			path: config.restPath + '/batches/' + state.batchId + '/prepare',
+			method: 'POST',
+			data: { sender: state.account },
+		} );
+
+		// Verify against the rows the merchant saw on the review screen, not the server's echo.
+		var confirmed = estimate.batch.items;
+		var problems = Wallet.verifyBatchTransaction( prepared, {
+			contract: config.chain.contract,
+			chainId: config.chain.id,
+			token: config.token.address,
+			recipients: confirmed.map( function ( item ) {
+				return item.wallet_address;
+			} ),
+			amounts: confirmed.map( function ( item ) {
+				return toUnits( item.amount );
+			} ),
+			ceilingBps: config.approvalCeilingBps,
+		} );
+		if ( problems.length ) {
+			refuseTransaction( problems );
+		}
+
 		showStep( 'submit' );
 		$( 'log' ).textContent = '';
 		$( 'tx' ).textContent = '';
-		log( __( 'Batch approved.', DOMAIN ) );
+		log( __( 'Batch approved and transaction verified.', DOMAIN ) );
 
-		var submission = { sender: state.account };
-
+		var txHash;
 		try {
-			await obtainSignature( estimate, totalUnits, submission );
-		} catch ( err ) {
-			// Nothing reached the chain: let the merchant fix the problem and retry.
-			showStep( 'review' );
-			throw err;
-		}
-
-		var result;
-		try {
-			result = await submitWithRetry( submission );
-		} catch ( err ) {
-			if ( submission.tx_hash ) {
-				// Funds may already be moving. Never invite a second payment.
-				log( sprintf( __( 'Your transaction %s was broadcast, but this site could not record it (%s). Do NOT sign again. Contact support with the transaction hash.', DOMAIN ), submission.tx_hash, errorMessage( err ) ), 'error' );
-				throw new Error( __( 'Transaction broadcast but not recorded. Do not resubmit.', DOMAIN ) );
-			}
-			showStep( 'review' );
-			throw err;
-		}
-
-		if ( result.warning ) {
-			log( sprintf( __( 'Gateway did not acknowledge yet (%s). The transaction is tracked and will be reconciled automatically.', DOMAIN ), result.warning ), 'warning' );
-		}
-		txLink( result.tx_hash );
-		pollStatus( result.status );
-	}
-
-	/**
-	 * Get the wallet's signature or broadcast tx hash into `submission`.
-	 *
-	 * @param {Object} estimate   Estimate.
-	 * @param {bigint} totalUnits Total incl. fee.
-	 * @param {Object} submission Mutated with signature or tx_hash.
-	 */
-	async function obtainSignature( estimate, totalUnits, submission ) {
-		if ( estimate.typed_data ) {
-			log( __( 'Waiting for your signature in the wallet…', DOMAIN ) );
-			submission.signature = await Wallet.signTypedData( estimate.typed_data );
-			log( __( 'Signed. Sending to the Spraay gateway…', DOMAIN ) );
-		} else if ( estimate.transaction ) {
-			if ( estimate.approval ) {
-				await Wallet.ensureAllowance( config.token.address, estimate.approval.spender, totalUnits, function ( stage ) {
+			if ( prepared.approval ) {
+				var approveUnits = BigInt( prepared.approval.amount );
+				await Wallet.ensureAllowance( config.token.address, prepared.approval.spender, approveUnits, function ( stage ) {
 					var messages = {
-						approve_prompt: sprintf( __( 'Approve exactly %s in your wallet so Spraay can distribute it…', DOMAIN ), formatUnits( totalUnits ) + ' ' + config.token.symbol ),
+						approve_prompt: sprintf( __( 'Approve exactly %s in your wallet so Spraay can distribute it…', DOMAIN ), formatUnits( approveUnits ) + ' ' + config.token.symbol ),
 						approve_sent: __( 'Approval sent. Waiting for confirmation…', DOMAIN ),
 						approve_confirmed: __( 'Approval confirmed.', DOMAIN ),
 					};
@@ -569,37 +525,46 @@
 				} );
 			}
 			log( __( 'Confirm the batch payment in your wallet…', DOMAIN ) );
-			submission.tx_hash = await Wallet.sendTransaction( estimate.transaction );
-			txLink( submission.tx_hash );
-			log( __( 'Transaction broadcast. Registering with the Spraay gateway…', DOMAIN ) );
-		} else {
-			throw new Error( __( 'The gateway estimate contained nothing to sign. Re-run the estimate.', DOMAIN ) );
+			txHash = await Wallet.sendTransaction( prepared.transaction );
+		} catch ( err ) {
+			// Nothing reached the chain: let the merchant fix the problem and retry.
+			showStep( 'review' );
+			throw err;
 		}
+
+		txLink( txHash );
+		log( __( 'Transaction broadcast. Recording it…', DOMAIN ) );
+
+		var result;
+		try {
+			result = await submitWithRetry( { sender: state.account, tx_hash: txHash } );
+		} catch ( err ) {
+			// Funds may already be moving. Never invite a second payment.
+			log( sprintf( __( 'Your transaction %1$s was broadcast, but this site could not record it (%2$s). Do NOT sign again. Contact support with the transaction hash.', DOMAIN ), txHash, errorMessage( err ) ), 'error' );
+			throw new Error( __( 'Transaction broadcast but not recorded. Do not resubmit.', DOMAIN ) );
+		}
+
+		pollStatus( result.status );
 	}
 
 	/**
-	 * POST /execute, retrying network failures when a tx was already broadcast
-	 * (the server-side claim makes repeats safe).
+	 * POST /submit, retrying transport failures. The server treats a repeat of
+	 * the same hash as success, so retries are safe.
 	 *
-	 * @param {Object} submission { sender, tx_hash?, signature? }.
-	 * @return {Promise<Object>} Execute result.
+	 * @param {Object} submission { sender, tx_hash }.
+	 * @return {Promise<Object>} Result.
 	 */
 	async function submitWithRetry( submission ) {
-		var attempts = submission.tx_hash ? 4 : 1;
 		for ( var i = 1; ; i++ ) {
 			try {
 				return await apiFetch( {
-					path: config.restPath + '/batches/' + state.batchId + '/execute',
+					path: config.restPath + '/batches/' + state.batchId + '/submit',
 					method: 'POST',
 					data: submission,
 				} );
 			} catch ( err ) {
-				// An earlier attempt reached the server even though its response was lost.
-				if ( i > 1 && err && err.code === 'spraay_already_submitted' ) {
-					return { status: 'pending', tx_hash: submission.tx_hash || '' };
-				}
 				// A REST error with a code came from the server; only retry transport failures.
-				if ( i >= attempts || ( err && err.code && err.code !== 'fetch_error' ) ) {
+				if ( i >= 4 || ( err && err.code && err.code !== 'fetch_error' ) ) {
 					throw err;
 				}
 				await new Promise( function ( resolve ) {
@@ -671,7 +636,7 @@
 			try {
 				await fn();
 			} catch ( err ) {
-				notify( 'error', errorMessage( err ) );
+				notify( 'error', errorMessage( err ), err && err.details );
 				if ( ! $( 'log' ).closest( '[data-spraay-step]' ).hidden ) {
 					log( errorMessage( err ), 'error' );
 				}

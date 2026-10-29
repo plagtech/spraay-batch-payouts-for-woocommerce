@@ -155,29 +155,39 @@ class Spraay_Rest_Api {
 			)
 		);
 
+		$sender_arg = array(
+			'sender' => array(
+				'type'              => 'string',
+				'required'          => true,
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+
 		register_rest_route(
 			self::NAMESPACE_V1,
-			'/batches/(?P<id>\d+)/execute',
+			'/batches/(?P<id>\d+)/prepare',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'execute_batch' ),
+				'callback'            => array( $this, 'prepare_batch' ),
+				'permission_callback' => array( $this, 'can_manage' ),
+				'args'                => array_merge( $id_arg, $sender_arg ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE_V1,
+			'/batches/(?P<id>\d+)/submit',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'submit_batch' ),
 				'permission_callback' => array( $this, 'can_manage' ),
 				'args'                => array_merge(
 					$id_arg,
+					$sender_arg,
 					array(
-						'sender'    => array(
+						'tx_hash' => array(
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-						'tx_hash'   => array(
-							'type'              => 'string',
-							'default'           => '',
-							'sanitize_callback' => 'sanitize_text_field',
-						),
-						'signature' => array(
-							'type'              => 'string',
-							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					)
@@ -352,20 +362,23 @@ class Spraay_Rest_Api {
 	}
 
 	/**
-	 * POST /batches/{id}/execute — hand the wallet's tx hash or signature to the gateway.
+	 * POST /batches/{id}/prepare — get the gateway's unsigned transaction.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function execute_batch( WP_REST_Request $request ) {
-		$result = Spraay_Batch::submit_execution(
-			$request['id'],
-			array(
-				'sender'    => $request['sender'],
-				'tx_hash'   => $request['tx_hash'],
-				'signature' => $request['signature'],
-			)
-		);
+	public function prepare_batch( WP_REST_Request $request ) {
+		return rest_ensure_response( Spraay_Batch::prepare_execution( $request['id'], $request['sender'] ) );
+	}
+
+	/**
+	 * POST /batches/{id}/submit — record the hash of the broadcast transaction.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function submit_batch( WP_REST_Request $request ) {
+		$result = Spraay_Batch::record_submission( $request['id'], $request['tx_hash'], $request['sender'] );
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
@@ -375,7 +388,7 @@ class Spraay_Rest_Api {
 	}
 
 	/**
-	 * GET /batches/{id}/status — reconcile with the gateway now.
+	 * GET /batches/{id}/status — check the transaction receipt on-chain now.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error

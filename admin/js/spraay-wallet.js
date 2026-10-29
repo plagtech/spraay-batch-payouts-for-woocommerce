@@ -18,6 +18,12 @@
 		'function approve(address spender, uint256 amount) returns (bool)',
 	];
 
+	// Spraay batch contract entry points (selectors 0xfb83b683 and 0x970aa1f2).
+	var SPRAAY_ABI = [
+		'function sprayToken(address token, tuple(address recipient, uint256 amount)[] recipients)',
+		'function sprayETH(tuple(address recipient, uint256 amount)[] recipients) payable',
+	];
+
 	var provider = null;
 	var signer = null;
 
@@ -203,36 +209,118 @@
 		},
 
 		/**
-		 * Send a transaction prepared by the gateway. Resolves with the hash as
-		 * soon as it is broadcast.
+		 * Verify the gateway's unsigned transaction before anything is signed.
+		 * Fails closed: any mismatch is returned as a human-readable problem.
 		 *
-		 * @param {{to:string,data:string,value?:string}} tx Transaction.
+		 * @param {Object} prepared  { transaction: {to,data,value,chain_id,gas_limit}, approval: {token,spender,amount}|null }.
+		 * @param {Object} expected  { contract, chainId, token, recipients: string[], amounts: bigint[], ceilingBps: number }
+		 *                           — recipients/amounts are what the merchant confirmed in the UI.
+		 * @return {string[]} Problems; empty when the transaction is safe to sign.
+		 */
+		verifyBatchTransaction: function ( prepared, expected ) {
+			requireEthers();
+			var problems = [];
+			var tx = prepared.transaction || {};
+
+			// 1. Destination is the known Spraay contract.
+			if ( ! ethers.isAddress( tx.to ) || ! this.sameAddress( tx.to, expected.contract ) ) {
+				problems.push( 'transaction is addressed to ' + tx.to + ', not the Spraay contract ' + expected.contract );
+			}
+
+			// 2. Network.
+			if ( Number( tx.chain_id ) !== Number( expected.chainId ) ) {
+				problems.push( 'transaction is for chain ' + tx.chain_id + ', expected ' + expected.chainId );
+			}
+
+			// 3. No ETH for an ERC-20 batch.
+			var value;
+			try {
+				value = BigInt( tx.value || '0' );
+			} catch ( e ) {
+				value = -1n;
+			}
+			if ( value !== 0n ) {
+				problems.push( 'transaction value is ' + tx.value + ', expected 0' );
+			}
+
+			// 4 + 5. Decode calldata and match it against the confirmed rows.
+			var parsed = null;
+			try {
+				parsed = new ethers.Interface( SPRAAY_ABI ).parseTransaction( { data: tx.data, value: value > 0n ? value : 0n } );
+			} catch ( e ) {
+				parsed = null;
+			}
+			if ( ! parsed ) {
+				problems.push( 'transaction data is not a Spraay batch call' );
+			} else if ( parsed.name !== 'sprayToken' ) {
+				problems.push( 'transaction calls ' + parsed.name + ', expected sprayToken for a token payout' );
+			} else {
+				var token = parsed.args[ 0 ];
+				var rows = parsed.args[ 1 ];
+				if ( ! this.sameAddress( token, expected.token ) ) {
+					problems.push( 'transaction pays token ' + token + ', expected ' + expected.token );
+				}
+				if ( rows.length !== expected.recipients.length ) {
+					problems.push( 'transaction has ' + rows.length + ' recipients, you confirmed ' + expected.recipients.length );
+				} else {
+					for ( var i = 0; i < rows.length; i++ ) {
+						if ( ! this.sameAddress( rows[ i ][ 0 ], expected.recipients[ i ] ) ) {
+							problems.push( 'recipient #' + ( i + 1 ) + ' is ' + rows[ i ][ 0 ] + ', you confirmed ' + expected.recipients[ i ] );
+						}
+						if ( BigInt( rows[ i ][ 1 ] ) !== expected.amounts[ i ] ) {
+							problems.push( 'amount #' + ( i + 1 ) + ' is ' + rows[ i ][ 1 ] + ' base units, you confirmed ' + expected.amounts[ i ] );
+						}
+					}
+				}
+			}
+
+			// 6 + 7. Approval: right token and spender, amount within the confirmed total + ceiling.
+			var approval = prepared.approval;
+			if ( approval ) {
+				if ( ! this.sameAddress( approval.spender, expected.contract ) ) {
+					problems.push( 'approval spender is ' + approval.spender + ', not the Spraay contract' );
+				}
+				if ( approval.token && ! this.sameAddress( approval.token, expected.token ) ) {
+					problems.push( 'approval is for token ' + approval.token + ', expected ' + expected.token );
+				}
+				var subtotal = expected.amounts.reduce( function ( sum, a ) {
+					return sum + a;
+				}, 0n );
+				var ceiling = subtotal + ( subtotal * BigInt( expected.ceilingBps ) ) / 10000n;
+				var amount;
+				try {
+					amount = BigInt( approval.amount );
+				} catch ( e ) {
+					amount = -1n;
+				}
+				if ( amount < subtotal || amount > ceiling ) {
+					problems.push( 'approval amount ' + approval.amount + ' is outside the allowed range ' + subtotal + '–' + ceiling + ' base units' );
+				}
+			}
+
+			return problems;
+		},
+
+		/**
+		 * Send the verified gateway transaction. Resolves with the hash as soon
+		 * as it is broadcast.
+		 *
+		 * @param {{to:string,data:string,value?:string,chain_id:number,gas_limit?:string}} tx Transaction (gas_limit is hex).
 		 * @return {Promise<string>} Transaction hash.
 		 */
 		sendTransaction: async function ( tx ) {
 			try {
-				var response = await signer.sendTransaction( {
+				var request = {
 					to: ethers.getAddress( tx.to ),
 					data: tx.data,
-					value: tx.value ? BigInt( tx.value ) : 0n,
-				} );
+					value: BigInt( tx.value || '0' ),
+					chainId: Number( tx.chain_id ),
+				};
+				if ( tx.gas_limit ) {
+					request.gasLimit = BigInt( tx.gas_limit ); // Hex string, e.g. "0x55730".
+				}
+				var response = await signer.sendTransaction( request );
 				return response.hash;
-			} catch ( err ) {
-				throw normalizeError( err );
-			}
-		},
-
-		/**
-		 * Sign EIP-712 typed data (gateway-relayed execution).
-		 *
-		 * @param {{domain:Object,types:Object,primaryType?:string,message:Object}} typed Payload.
-		 * @return {Promise<string>} Signature.
-		 */
-		signTypedData: async function ( typed ) {
-			try {
-				var types = Object.assign( {}, typed.types );
-				delete types.EIP712Domain; // ethers derives the domain type itself.
-				return await signer.signTypedData( typed.domain, types, typed.message );
 			} catch ( err ) {
 				throw normalizeError( err );
 			}

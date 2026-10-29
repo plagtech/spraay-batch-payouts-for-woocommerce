@@ -190,6 +190,7 @@ class Spraay_Admin {
 				'name'     => $chain ? $chain['name'] : '',
 				'rpcUrl'   => $chain ? $chain['rpc_url'] : '',
 				'explorer' => $chain ? $chain['explorer'] : '',
+				'contract' => $chain ? $chain['spraay_contract'] : '',
 			),
 			'token'       => array(
 				'symbol'   => $settings['token'],
@@ -197,6 +198,7 @@ class Spraay_Admin {
 				'decimals' => $token ? (int) $token['decimals'] : 6,
 			),
 			'feeBps'      => Spraay_Amount::FEE_BPS,
+			'approvalCeilingBps' => 200, // Reject approvals above confirmed payouts + 2%.
 			'feeDisplay'  => (bool) $settings['fee_display'],
 			'autoImport'  => (bool) $settings['auto_import_wc'],
 			'sources'     => Spraay_WC_Integration::available_sources(),

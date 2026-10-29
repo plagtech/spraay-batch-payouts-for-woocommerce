@@ -366,7 +366,7 @@ class Spraay_Batch {
 	 *
 	 * @param int    $batch_id Batch ID.
 	 * @param string $sender   Merchant wallet address, if connected.
-	 * @return array|WP_Error Estimate for the review screen and wallet.
+	 * @return array|WP_Error Estimate for the review screen (decimal strings).
 	 */
 	public static function estimate( $batch_id, $sender = '' ) {
 		global $wpdb;
@@ -382,41 +382,28 @@ class Spraay_Batch {
 			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
 		}
 
-		$items    = self::get_items( $batch_id );
-		$settings = Spraay_Plugin::get_settings();
 		// Always estimate on the currently configured network, which is what the wallet will use.
+		$settings          = Spraay_Plugin::get_settings();
 		$batch['chain_id'] = (int) $settings['chain_id'];
-		$payload           = array(
-			'chainId'    => (int) $batch['chain_id'],
-			'token'      => $settings['token'],
-			'reference'  => self::reference( $batch_id ),
-			'recipients' => array(),
-		);
-		if ( '' !== $sender ) {
-			$payload['sender'] = Spraay_Address::to_checksum( $sender );
-		}
-		foreach ( $items as $item ) {
-			$payload['recipients'][] = array(
-				'address' => $item['wallet_address'],
-				'amount'  => $item['amount'],
-			);
+
+		// Validates the batch can be expressed as a gateway request before asking.
+		$body = self::gateway_body( $batch_id, $sender );
+		if ( is_wp_error( $body ) ) {
+			return $body;
 		}
 
-		$estimate = ( new Spraay_Gateway_Client() )->estimate( $payload );
+		$estimate = ( new Spraay_Gateway_Client() )->estimate( count( $body['recipients'] ), $body['chain'] );
 		if ( is_wp_error( $estimate ) ) {
 			return $estimate;
 		}
-		if ( '' === $estimate['batch_id'] ) {
-			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway estimate did not include a batch ID.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+		if ( ! $estimate['supported'] ) {
+			return new WP_Error( 'spraay_chain_unsupported', __( 'The Spraay gateway reports that it cannot currently settle batches on this network.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
 		}
 
-		// Refuse to proceed if the gateway disagrees with what the merchant reviewed.
-		$subtotal = Spraay_Amount::to_units( $batch['total_amount'] );
-		if ( '' !== $estimate['subtotal'] && Spraay_Amount::to_units( $estimate['subtotal'] ) !== $subtotal ) {
-			return new WP_Error( 'spraay_estimate_mismatch', __( 'The gateway estimate total does not match this batch. Nothing was submitted.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
-		}
-
-		$fee_units = '' !== $estimate['fee'] ? Spraay_Amount::to_units( $estimate['fee'] ) : Spraay_Amount::fee_units( $subtotal );
+		// The fee is added on top of the payouts at the gateway's reported rate.
+		// The approval amount from execute is checked against this before signing.
+		$subtotal  = Spraay_Amount::to_units( $batch['total_amount'] );
+		$fee_units = Spraay_Amount::fee_units( $subtotal, $estimate['fee_bps'] );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update(
@@ -425,7 +412,6 @@ class Spraay_Batch {
 				'status'           => self::STATUS_ESTIMATED,
 				'chain_id'         => (int) $batch['chain_id'],
 				'fee_amount'       => Spraay_Amount::from_units( $fee_units ),
-				'gateway_batch_id' => sanitize_text_field( $estimate['batch_id'] ),
 				'gateway_response' => wp_json_encode( array( 'estimate' => $estimate['raw'] ) ),
 				'approved_by'      => null,
 			),
@@ -434,15 +420,11 @@ class Spraay_Batch {
 		self::set_item_status( $batch_id, self::STATUS_ESTIMATED );
 
 		return array(
-			'batch_id'         => absint( $batch_id ),
-			'gateway_batch_id' => $estimate['batch_id'],
-			'chain_id'         => (int) $batch['chain_id'],
-			'subtotal'         => Spraay_Amount::from_units( $subtotal ),
-			'fee'              => Spraay_Amount::from_units( $fee_units ),
-			'total'            => Spraay_Amount::from_units( $subtotal + $fee_units ),
-			'transaction'      => $estimate['transaction'],
-			'approval'         => $estimate['approval'],
-			'typed_data'       => $estimate['typed_data'],
+			'batch_id' => absint( $batch_id ),
+			'chain_id' => (int) $batch['chain_id'],
+			'subtotal' => Spraay_Amount::from_units( $subtotal ),
+			'fee'      => Spraay_Amount::from_units( $fee_units ),
+			'total'    => Spraay_Amount::from_units( $subtotal + $fee_units ),
 		);
 	}
 
@@ -475,31 +457,21 @@ class Spraay_Batch {
 	}
 
 	/**
-	 * Submit a wallet-signed batch to the gateway and mark it pending.
+	 * Ask the gateway for the unsigned batch transaction for an approved batch.
 	 *
-	 * @param int   $batch_id Batch ID.
-	 * @param array $args { sender, tx_hash?, signature? }.
-	 * @return array|WP_Error Batch status payload.
+	 * Nothing is broadcast here and the batch stays "estimated"; the wallet
+	 * signs the returned transaction and record_submission() stores its hash.
+	 * The browser re-verifies the calldata against `expected` before signing.
+	 *
+	 * @param int    $batch_id Batch ID.
+	 * @param string $sender   Merchant wallet that will sign.
+	 * @return array|WP_Error { transaction, approval, batch, expected: { token, contract, chain_id, recipients[], amounts[], subtotal, fee } }
 	 */
-	public static function submit_execution( $batch_id, array $args ) {
-		global $wpdb;
-
-		$batch_id  = absint( $batch_id );
-		$sender    = isset( $args['sender'] ) ? (string) $args['sender'] : '';
-		$tx_hash   = isset( $args['tx_hash'] ) ? strtolower( (string) $args['tx_hash'] ) : '';
-		$signature = isset( $args['signature'] ) ? (string) $args['signature'] : '';
+	public static function prepare_execution( $batch_id, $sender ) {
+		$batch_id = absint( $batch_id );
 
 		if ( ! Spraay_Address::is_valid( $sender ) ) {
 			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
-		}
-		if ( '' !== $tx_hash && ! preg_match( '/^0x[0-9a-f]{64}$/', $tx_hash ) ) {
-			return new WP_Error( 'spraay_invalid_tx', __( 'Transaction hash is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
-		}
-		if ( '' !== $signature && ! preg_match( '/^0x[0-9a-fA-F]{130,}$/', $signature ) ) {
-			return new WP_Error( 'spraay_invalid_signature', __( 'Signature is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
-		}
-		if ( '' === $tx_hash && '' === $signature ) {
-			return new WP_Error( 'spraay_missing_signature', __( 'A transaction hash or signature is required.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
 		}
 		if ( ! self::is_approved( $batch_id ) ) {
 			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
@@ -514,14 +486,105 @@ class Spraay_Batch {
 			);
 		}
 
-		// Atomically claim the batch so a double-submit can't execute twice.
-		$batches = Spraay_Plugin::table( 'batches' );
+		$batch = self::get( $batch_id );
+		$chain = Spraay_Plugin::get_chain( $batch['chain_id'] );
+		$body  = self::gateway_body( $batch_id, $sender );
+		if ( ! $chain || is_wp_error( $body ) ) {
+			return is_wp_error( $body ) ? $body : new WP_Error( 'spraay_chain_unsupported', __( 'This batch is on an unsupported network.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+		}
+
+		$result = ( new Spraay_Gateway_Client() )->execute( $body );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Server-side sanity checks; the wallet JS repeats these and also decodes the calldata.
+		$tx       = $result['transaction'];
+		$approval = $result['approval'];
+		$subtotal = Spraay_Amount::to_units( $batch['total_amount'] );
+		$problems = array();
+		if ( strtolower( $tx['to'] ) !== strtolower( $chain['spraay_contract'] ) ) {
+			$problems[] = __( 'transaction is not addressed to the Spraay contract', 'spraay-batch-payouts' );
+		}
+		if ( (int) $tx['chain_id'] !== (int) $batch['chain_id'] ) {
+			$problems[] = __( 'transaction is for a different network', 'spraay-batch-payouts' );
+		}
+		if ( '' !== ltrim( preg_replace( '/^0x/i', '', $tx['value'] ), '0' ) ) {
+			$problems[] = __( 'transaction asks for ETH', 'spraay-batch-payouts' );
+		}
+		if ( $approval && ( strtolower( $approval['spender'] ) !== strtolower( $chain['spraay_contract'] ) || strtolower( $approval['token'] ) !== strtolower( $body['token'] ) ) ) {
+			$problems[] = __( 'approval is for an unexpected token or spender', 'spraay-batch-payouts' );
+		}
+		if ( '' !== $result['batch']['total_amount'] && (int) $result['batch']['total_amount'] !== $subtotal ) {
+			$problems[] = __( 'payout total differs from this batch', 'spraay-batch-payouts' );
+		}
+		if ( $problems ) {
+			return new WP_Error(
+				'spraay_unsafe_transaction',
+				/* translators: %s: list of problems. */
+				sprintf( __( 'The gateway transaction was rejected (%s). Nothing was signed.', 'spraay-batch-payouts' ), implode( '; ', $problems ) ),
+				array( 'status' => 502 )
+			);
+		}
+
+		self::store_gateway_response( $batch_id, 'execute', $result['raw'] );
+
+		return array(
+			'transaction' => $tx,
+			'approval'    => $approval,
+			'batch'       => $result['batch'],
+			'expected'    => array(
+				'token'      => $body['token'],
+				'contract'   => $chain['spraay_contract'],
+				'chain_id'   => (int) $batch['chain_id'],
+				'recipients' => $body['recipients'],
+				'amounts'    => $body['amounts'],
+				'subtotal'   => (string) $subtotal,
+				'fee'        => (string) Spraay_Amount::to_units( $batch['fee_amount'] ),
+			),
+		);
+	}
+
+	/**
+	 * Record the hash of the transaction the wallet broadcast and mark the
+	 * batch pending. Idempotent for the same hash, so the browser can retry.
+	 *
+	 * @param int    $batch_id Batch ID.
+	 * @param string $tx_hash  Transaction hash.
+	 * @param string $sender   Wallet that sent it.
+	 * @return array|WP_Error { status, tx_hash }
+	 */
+	public static function record_submission( $batch_id, $tx_hash, $sender ) {
+		global $wpdb;
+
+		$batch_id = absint( $batch_id );
+		$tx_hash  = strtolower( (string) $tx_hash );
+
+		if ( ! preg_match( '/^0x[0-9a-f]{64}$/', $tx_hash ) ) {
+			return new WP_Error( 'spraay_invalid_tx', __( 'Transaction hash is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+		}
+
+		$batch = self::get( $batch_id );
+		if ( $batch && self::STATUS_ESTIMATED !== $batch['status'] ) {
+			if ( $tx_hash === strtolower( (string) $batch['tx_hash'] ) ) {
+				return array(
+					'status'  => $batch['status'],
+					'tx_hash' => $tx_hash,
+				);
+			}
+			return new WP_Error( 'spraay_already_submitted', __( 'This batch was already submitted with a different transaction.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+		}
+		if ( ! self::is_approved( $batch_id ) ) {
+			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+		}
+
+		// Atomically claim the batch so concurrent requests can't record two transactions.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$claimed = $wpdb->update(
-			$batches,
+			Spraay_Plugin::table( 'batches' ),
 			array(
 				'status'  => self::STATUS_PENDING,
-				'tx_hash' => '' !== $tx_hash ? $tx_hash : null,
+				'tx_hash' => $tx_hash,
 			),
 			array(
 				'id'     => $batch_id,
@@ -532,51 +595,58 @@ class Spraay_Batch {
 			return new WP_Error( 'spraay_already_submitted', __( 'This batch is not awaiting execution (it may already have been submitted).', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
 		}
 		self::set_item_status( $batch_id, self::STATUS_PENDING );
-
-		$batch   = self::get( $batch_id );
-		$payload = array(
-			'batchId' => $batch['gateway_batch_id'],
-			'chainId' => (int) $batch['chain_id'],
-			'sender'  => Spraay_Address::to_checksum( $sender ),
-		);
-		if ( '' !== $tx_hash ) {
-			$payload['txHash'] = $tx_hash;
-		}
-		if ( '' !== $signature ) {
-			$payload['signature'] = $signature;
-		}
-
-		$result = ( new Spraay_Gateway_Client() )->execute( $payload );
-
-		if ( is_wp_error( $result ) ) {
-			if ( '' === $tx_hash ) {
-				// Relayed mode: nothing reached the chain, so the merchant can retry.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-				$wpdb->update( $batches, array( 'status' => self::STATUS_ESTIMATED ), array( 'id' => $batch_id ) );
-				self::set_item_status( $batch_id, self::STATUS_ESTIMATED );
-				return $result;
-			}
-			// The wallet already broadcast the transaction: keep it pending and let
-			// reconciliation pick it up rather than inviting a second payment.
-			self::store_gateway_response( $batch_id, 'execute_error', $result->get_error_message() );
-			do_action( 'spraay_batch_submitted', $batch_id );
-			return array(
-				'status'  => self::STATUS_PENDING,
+		self::store_gateway_response(
+			$batch_id,
+			'submitted',
+			array(
+				'sender'  => Spraay_Address::is_valid( $sender ) ? Spraay_Address::to_checksum( $sender ) : '',
 				'tx_hash' => $tx_hash,
-				'warning' => $result->get_error_message(),
-			);
-		}
+			)
+		);
 
-		self::store_gateway_response( $batch_id, 'execute', $result['raw'] );
+		/**
+		 * Fires when a batch transaction has been broadcast and recorded.
+		 *
+		 * @param int $batch_id Batch ID.
+		 */
 		do_action( 'spraay_batch_submitted', $batch_id );
 
-		// Execute may already report a final state.
-		self::apply_status( $batch_id, $result );
-
-		$batch = self::get( $batch_id );
 		return array(
-			'status'  => $batch['status'],
-			'tx_hash' => (string) $batch['tx_hash'],
+			'status'  => self::STATUS_PENDING,
+			'tx_hash' => $tx_hash,
+		);
+	}
+
+	/**
+	 * Gateway request body (parallel recipient/amount arrays in base units).
+	 *
+	 * @param int    $batch_id Batch ID.
+	 * @param string $sender   Merchant wallet or ''.
+	 * @return array|WP_Error
+	 */
+	private static function gateway_body( $batch_id, $sender ) {
+		$settings = Spraay_Plugin::get_settings();
+		$chain    = Spraay_Plugin::get_chain( $settings['chain_id'] );
+		if ( ! $chain || ! isset( $chain['tokens'][ $settings['token'] ] ) ) {
+			return new WP_Error( 'spraay_chain_unsupported', __( 'The configured network or token is not supported.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+		}
+
+		$recipients = array();
+		$amounts    = array();
+		foreach ( self::get_items( $batch_id ) as $item ) {
+			if ( empty( $item['wallet_address'] ) ) {
+				return new WP_Error( 'spraay_unknown_recipient', __( 'A recipient in this batch was deleted. Edit the batch and remove it.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			}
+			$recipients[] = $item['wallet_address'];
+			$amounts[]    = (string) Spraay_Amount::to_units( $item['amount'] );
+		}
+
+		return Spraay_Gateway_Client::batch_body(
+			$chain['gateway_chain'],
+			$chain['tokens'][ $settings['token'] ]['address'],
+			'' !== $sender ? Spraay_Address::to_checksum( $sender ) : '',
+			$recipients,
+			$amounts
 		);
 	}
 
@@ -584,7 +654,7 @@ class Spraay_Batch {
 	 * Apply a normalized gateway status to a pending batch.
 	 *
 	 * @param int   $batch_id Batch ID.
-	 * @param array $status   From Spraay_Gateway_Client::status()/execute().
+	 * @param array $status   From Spraay_Reconciliation (on-chain receipt check).
 	 * @return string Resulting batch status.
 	 */
 	public static function apply_status( $batch_id, array $status ) {
@@ -684,16 +754,6 @@ class Spraay_Batch {
 	public static function is_approved( $batch_id ) {
 		$batch = self::get( $batch_id );
 		return $batch && self::STATUS_ESTIMATED === $batch['status'] && ! empty( $batch['approved_by'] );
-	}
-
-	/**
-	 * Site-unique reference sent to the gateway.
-	 *
-	 * @param int $batch_id Batch ID.
-	 * @return string
-	 */
-	public static function reference( $batch_id ) {
-		return 'wp-' . substr( md5( home_url() ), 0, 10 ) . '-' . absint( $batch_id );
 	}
 
 	/**

@@ -54,7 +54,7 @@ $spraay_chain = isset( $chains[ $settings['chain_id'] ] ) ? $chains[ $settings['
 							<option value="<?php echo esc_attr( $spraay_id ); ?>" <?php selected( (int) $settings['chain_id'], (int) $spraay_id ); ?>><?php echo esc_html( $spraay_c['name'] . ' (' . $spraay_id . ')' ); ?></option>
 						<?php endforeach; ?>
 					</select>
-					<p class="description"><?php esc_html_e( 'Use Base for real payouts. Base Sepolia is for testing with testnet USDC.', 'spraay-batch-payouts' ); ?></p>
+					<p class="description"><?php esc_html_e( 'The Spraay gateway settles USDC batches on Base.', 'spraay-batch-payouts' ); ?></p>
 				</td>
 			</tr>
 			<tr>
