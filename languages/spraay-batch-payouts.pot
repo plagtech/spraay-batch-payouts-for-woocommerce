@@ -910,15 +910,15 @@ msgstr ""
 msgid "This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again."
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:335
-msgid "The Spraay gateway requires payment (x402) for this request, which this plugin cannot make yet. Contact Spraay about API access for your store."
+#: includes/class-spraay-gateway-client.php:336
+msgid "API key required — configure your Spraay API key in Settings"
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:341
+#: includes/class-spraay-gateway-client.php:342
 msgid "Spraay gateway returned HTTP %1$d. %2$s"
 msgstr ""
 
-#: includes/class-spraay-gateway-client.php:347
+#: includes/class-spraay-gateway-client.php:348
 msgid "The Spraay gateway returned an unreadable response."
 msgstr ""
 

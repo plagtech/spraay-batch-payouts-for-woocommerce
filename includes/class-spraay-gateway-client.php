@@ -332,7 +332,8 @@ class Spraay_Gateway_Client {
 				return new WP_Error( 'spraay_duplicate_payment', __( 'This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again.', 'spraay-batch-payouts' ), $data );
 			}
 			if ( 402 === $code ) {
-				return new WP_Error( 'spraay_payment_required', __( 'The Spraay gateway requires payment (x402) for this request, which this plugin cannot make yet. Contact Spraay about API access for your store.', 'spraay-batch-payouts' ), $data );
+				// Paid endpoints answer 402 (x402) without a valid API key.
+				return new WP_Error( 'spraay_payment_required', __( 'API key required — configure your Spraay API key in Settings', 'spraay-batch-payouts' ), $data );
 			}
 
 			return new WP_Error(
