@@ -168,7 +168,7 @@ class Spraay_Gateway_Client {
 	 * @return array|WP_Error {
 	 *     @type array      $transaction { to, data, value, chain_id, gas_limit } — gas_limit is hex.
 	 *     @type array|null $approval    { token, spender, amount } when an ERC-20 approve is needed first.
-	 *     @type array      $batch       { recipient_count, total_amount, fee, total_with_fee } in base units.
+	 *     @type array      $batch       { recipient_count, total_amount, fee, total_with_fee } as human-decimal strings (e.g. "1.5").
 	 *     @type array      $raw         Untouched response.
 	 * }
 	 */

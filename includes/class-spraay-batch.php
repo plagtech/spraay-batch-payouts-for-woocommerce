@@ -519,8 +519,14 @@ class Spraay_Batch {
 		if ( $approval && ( strtolower( $approval['spender'] ) !== strtolower( $chain['spraay_contract'] ) || strtolower( $approval['token'] ) !== strtolower( $body['token'] ) ) ) {
 			$problems[] = __( 'approval is for an unexpected token or spender', 'spraay-batch-payouts' );
 		}
-		if ( '' !== $result['batch']['total_amount'] && (int) $result['batch']['total_amount'] !== $subtotal ) {
+		// The gateway's batch summary is human-decimal ("1.5"), not base units.
+		$gateway_total = $result['batch']['total_amount'];
+		if ( '' !== $gateway_total && Spraay_Amount::to_units( $gateway_total ) !== $subtotal ) {
 			$problems[] = __( 'payout total differs from this batch', 'spraay-batch-payouts' );
+			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf( 'Spraay batch %d total mismatch: expected %d base units (%s USDC), gateway returned totalAmount %s (parsed as %d base units).', $batch_id, $subtotal, Spraay_Amount::from_units( $subtotal ), wp_json_encode( $gateway_total ), Spraay_Amount::to_units( $gateway_total ) ) );
+			}
 		}
 		if ( $problems ) {
 			return new WP_Error(
