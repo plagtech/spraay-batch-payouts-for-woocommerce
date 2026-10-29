@@ -254,7 +254,7 @@ class Spraay_Gateway_Client {
 			),
 		);
 		if ( '' !== $this->api_key ) {
-			$args['headers']['Authorization'] = 'Bearer ' . $this->api_key;
+			$args['headers']['X-API-Key'] = $this->api_key;
 		}
 		if ( null !== $body ) {
 			$args['headers']['Content-Type'] = 'application/json';
