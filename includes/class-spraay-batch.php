@@ -75,12 +75,16 @@ class Spraay_Batch {
 			ARRAY_A
 		);
 
-		foreach ( (array) $rows as &$row ) {
+		// Cast before iterating: foreach by reference over a cast expression
+		// writes to a temporary copy, so the decoded IDs would be lost.
+		$rows = (array) $rows;
+		foreach ( $rows as &$row ) {
 			$decoded             = json_decode( (string) $row['wc_order_ids'], true );
 			$row['wc_order_ids'] = is_array( $decoded ) ? array_map( 'absint', $decoded ) : array();
 		}
+		unset( $row );
 
-		return (array) $rows;
+		return $rows;
 	}
 
 	/**

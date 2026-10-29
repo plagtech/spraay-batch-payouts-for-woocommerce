@@ -415,7 +415,7 @@ class Spraay_WC_Integration {
 		$settled = self::get_settled_order_ids( $batch_id );
 		$mine    = array();
 		foreach ( Spraay_Batch::get_items( $batch_id ) as $item ) {
-			$mine = array_merge( $mine, $item['wc_order_ids'] );
+			$mine = array_merge( $mine, (array) ( $item['wc_order_ids'] ?? array() ) );
 		}
 		return array_values( array_intersect( $mine, $settled ) );
 	}
