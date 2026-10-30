@@ -112,9 +112,9 @@ There is no gateway status endpoint: confirmation is read from Base RPC (`eth_ge
 
 ## External services
 
-The plugin calls the Spraay gateway, the Base RPC endpoint (server side, for reconciliation) and cdnjs (ethers.js 6.13.5, loaded with an SRI hash). [`readme.txt`](readme.txt) lists exactly what is sent to each.
+The plugin calls the Spraay gateway and the Base RPC endpoint (server side, for reconciliation). [`readme.txt`](readme.txt) lists exactly what is sent to each.
 
-> **WordPress.org note:** loading ethers.js from a CDN will likely fail directory review. Before submitting, bundle `ethers.umd.min.js` locally and point `spraay_ethers_script_url` at it.
+ethers.js 6.13.5 (MIT) is bundled at `admin/js/ethers.min.js`, so nothing is loaded from a CDN. The `spraay_ethers_script_url` filter can point it elsewhere.
 
 ## Project layout
 
@@ -135,6 +135,7 @@ includes/
   class-spraay-amount.php       Exact base-unit arithmetic (no floats)
   class-spraay-*-list-table.php WP_List_Table screens
 admin/views/                    Page templates
+admin/js/ethers.min.js          Bundled ethers.js 6.13.5 UMD build (MIT)
 admin/js/spraay-wallet.js       Wallet connection, verification, signing (ethers v6)
 admin/js/spraay-admin.js        Batch builder UI
 ```

@@ -61,8 +61,6 @@ Recipient labels, emails and notes are never sent.
 
 Spraay gateway: [Terms of Service](https://spraay.app/terms) · [Privacy Policy](https://spraay.app/privacy)
 
-**Content delivery:** the batch builder loads the ethers.js library from cdnjs (`https://cdnjs.cloudflare.com`), operated by Cloudflare, with a subresource-integrity check. cdnjs receives standard request data such as your IP address and browser user agent. [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/)
-
 **Base network RPC:** to confirm payouts, your WordPress server sends the batch transaction hash to the public Base RPC endpoint (`https://mainnet.base.org`, operated by Coinbase; changeable with the `spraay_rpc_url` filter) using `eth_getTransactionReceipt`. This happens on the batch screens and every five minutes via WP-Cron while a batch is pending. [Base Privacy Policy](https://www.coinbase.com/legal/privacy)
 
 Your browser wallet communicates with Base through the RPC provider configured in the wallet. Transactions on Base are public and permanent.

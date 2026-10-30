@@ -20,14 +20,9 @@ class Spraay_Admin {
 	const CAPABILITY = 'manage_woocommerce';
 
 	/**
-	 * ethers.js version loaded from cdnjs.
+	 * Version of the bundled ethers.js UMD build in admin/js/ethers.min.js.
 	 */
 	const ETHERS_VERSION = '6.13.5';
-
-	/**
-	 * Subresource-integrity hash of the cdnjs ethers.umd.min.js build above.
-	 */
-	const ETHERS_SRI = 'sha384-NRAZj94DQk3dgtsOZzVYHbYVV1DFkF5QhL5RRxF0ILZLi6OQ7CsMlun748D42JbO';
 
 	/**
 	 * Page slugs.
@@ -53,7 +48,6 @@ class Spraay_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_notices', array( $this, 'render_flash_notice' ) );
-		add_filter( 'script_loader_tag', array( $this, 'add_ethers_sri' ), 10, 3 );
 		add_filter( 'plugin_action_links_' . plugin_basename( SPRAAY_BP_FILE ), array( $this, 'plugin_action_links' ) );
 
 		$actions = array(
@@ -152,12 +146,12 @@ class Spraay_Admin {
 		}
 
 		/**
-		 * Filter the ethers.js v6 UMD script URL. Point this at a locally
-		 * hosted copy to avoid loading from the CDN.
+		 * Filter the ethers.js v6 UMD script URL. Defaults to the copy
+		 * bundled with the plugin.
 		 *
 		 * @param string $url Script URL.
 		 */
-		$ethers_url = apply_filters( 'spraay_ethers_script_url', 'https://cdnjs.cloudflare.com/ajax/libs/ethers/' . self::ETHERS_VERSION . '/ethers.umd.min.js' );
+		$ethers_url = apply_filters( 'spraay_ethers_script_url', SPRAAY_BP_URL . 'admin/js/ethers.min.js' );
 
 		wp_enqueue_script( 'spraay-ethers', $ethers_url, array(), self::ETHERS_VERSION, true );
 		wp_enqueue_script( 'spraay-wallet', SPRAAY_BP_URL . 'admin/js/spraay-wallet.js', array( 'spraay-ethers' ), SPRAAY_BP_VERSION, true );
@@ -206,21 +200,6 @@ class Spraay_Admin {
 			'batchId'     => $batch ? (int) $batch['id'] : 0,
 			'batchStatus' => $batch ? $batch['status'] : '',
 		);
-	}
-
-	/**
-	 * Add SRI attributes to the default CDN ethers script tag.
-	 *
-	 * @param string $tag    Script tag.
-	 * @param string $handle Script handle.
-	 * @param string $src    Script URL.
-	 * @return string
-	 */
-	public function add_ethers_sri( $tag, $handle, $src ) {
-		if ( 'spraay-ethers' !== $handle || false === strpos( $src, 'cdnjs.cloudflare.com/ajax/libs/ethers/' . self::ETHERS_VERSION . '/' ) ) {
-			return $tag;
-		}
-		return str_replace( ' src=', ' integrity="' . esc_attr( self::ETHERS_SRI ) . '" crossorigin="anonymous" referrerpolicy="no-referrer" src=', $tag );
 	}
 
 	/**
