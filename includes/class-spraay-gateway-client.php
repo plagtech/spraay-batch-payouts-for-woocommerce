@@ -87,11 +87,11 @@ class Spraay_Gateway_Client {
 		$amounts    = array_values( array_map( 'strval', $amounts ) );
 
 		if ( ! $recipients || count( $recipients ) !== count( $amounts ) ) {
-			return new WP_Error( 'spraay_gateway_body', __( 'Recipients and amounts must be non-empty lists of the same length.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_gateway_body', __( 'Recipients and amounts must be non-empty lists of the same length.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 		foreach ( $amounts as $amount ) {
 			if ( ! preg_match( '/^[1-9]\d*$/', $amount ) ) {
-				return new WP_Error( 'spraay_gateway_body', __( 'Gateway amounts must be positive whole base-unit strings.', 'spraay-batch-payouts' ) );
+				return new WP_Error( 'spraay_gateway_body', __( 'Gateway amounts must be positive whole base-unit strings.', 'spraay-batch-payouts-for-woocommerce' ) );
 			}
 		}
 
@@ -139,7 +139,7 @@ class Spraay_Gateway_Client {
 		$estimate = isset( $response['estimate'] ) && is_array( $response['estimate'] ) ? $response['estimate'] : $response;
 		$bps      = isset( $estimate['protocolFeeBps'] ) ? filter_var( $estimate['protocolFeeBps'], FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 0, 'max_range' => 1000 ) ) ) : false;
 		if ( false === $bps ) {
-			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway estimate did not include a valid protocol fee rate.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway estimate did not include a valid protocol fee rate.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 502 ) );
 		}
 
 		$normalized = array(
@@ -174,7 +174,7 @@ class Spraay_Gateway_Client {
 	 */
 	public function execute( array $body ) {
 		if ( empty( $body['sender'] ) ) {
-			return new WP_Error( 'spraay_gateway_body', __( 'A connected wallet is required to prepare the transaction.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_gateway_body', __( 'A connected wallet is required to prepare the transaction.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		/**
@@ -190,7 +190,7 @@ class Spraay_Gateway_Client {
 
 		$tx = isset( $response['transaction'] ) && is_array( $response['transaction'] ) ? $response['transaction'] : array();
 		if ( empty( $tx['to'] ) || empty( $tx['data'] ) ) {
-			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway did not return a transaction to sign.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+			return new WP_Error( 'spraay_gateway_invalid', __( 'The gateway did not return a transaction to sign.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 502 ) );
 		}
 
 		$approval = null;
@@ -242,7 +242,7 @@ class Spraay_Gateway_Client {
 	 */
 	public function request( $method, $path, $body = null, $retryable = true ) {
 		if ( '' === $this->base_url || 0 !== strpos( $this->base_url, 'https://' ) ) {
-			return new WP_Error( 'spraay_gateway_url', __( 'The Spraay gateway URL must be an https:// URL. Check the plugin settings.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_gateway_url', __( 'The Spraay gateway URL must be an https:// URL. Check the plugin settings.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$args = array(
@@ -310,7 +310,7 @@ class Spraay_Gateway_Client {
 			return new WP_Error(
 				'spraay_gateway_unreachable',
 				/* translators: %s: transport error message. */
-				sprintf( __( 'Could not reach the Spraay gateway: %s', 'spraay-batch-payouts' ), $response->get_error_message() )
+				sprintf( __( 'Could not reach the Spraay gateway: %s', 'spraay-batch-payouts-for-woocommerce' ), $response->get_error_message() )
 			);
 		}
 
@@ -329,23 +329,23 @@ class Spraay_Gateway_Client {
 			);
 
 			if ( 409 === $code && 'duplicate_payment_detected' === $message ) {
-				return new WP_Error( 'spraay_duplicate_payment', __( 'This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again.', 'spraay-batch-payouts' ), $data );
+				return new WP_Error( 'spraay_duplicate_payment', __( 'This batch was already submitted to the gateway moments ago. Check your wallet and Batch History before trying again.', 'spraay-batch-payouts-for-woocommerce' ), $data );
 			}
 			if ( 402 === $code ) {
 				// Paid endpoints answer 402 (x402) without a valid API key.
-				return new WP_Error( 'spraay_payment_required', __( 'API key required — configure your Spraay API key in Settings', 'spraay-batch-payouts' ), $data );
+				return new WP_Error( 'spraay_payment_required', __( 'API key required — configure your Spraay API key in Settings', 'spraay-batch-payouts-for-woocommerce' ), $data );
 			}
 
 			return new WP_Error(
 				'spraay_gateway_http_' . $code,
 				/* translators: 1: HTTP status code, 2: gateway error message. */
-				sprintf( __( 'Spraay gateway returned HTTP %1$d. %2$s', 'spraay-batch-payouts' ), $code, sanitize_text_field( $message ) ),
+				sprintf( __( 'Spraay gateway returned HTTP %1$d. %2$s', 'spraay-batch-payouts-for-woocommerce' ), $code, sanitize_text_field( $message ) ),
 				$data
 			);
 		}
 
 		if ( ! is_array( $data ) ) {
-			return new WP_Error( 'spraay_gateway_invalid_json', __( 'The Spraay gateway returned an unreadable response.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_gateway_invalid_json', __( 'The Spraay gateway returned an unreadable response.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		// Unwrap { data: {...} } envelopes.

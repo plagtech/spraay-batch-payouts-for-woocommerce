@@ -35,11 +35,11 @@ class Spraay_Batch {
 	 */
 	public static function statuses() {
 		return array(
-			self::STATUS_DRAFT     => __( 'Draft', 'spraay-batch-payouts' ),
-			self::STATUS_ESTIMATED => __( 'Estimated', 'spraay-batch-payouts' ),
-			self::STATUS_PENDING   => __( 'Pending', 'spraay-batch-payouts' ),
-			self::STATUS_CONFIRMED => __( 'Confirmed', 'spraay-batch-payouts' ),
-			self::STATUS_FAILED    => __( 'Failed', 'spraay-batch-payouts' ),
+			self::STATUS_DRAFT     => __( 'Draft', 'spraay-batch-payouts-for-woocommerce' ),
+			self::STATUS_ESTIMATED => __( 'Estimated', 'spraay-batch-payouts-for-woocommerce' ),
+			self::STATUS_PENDING   => __( 'Pending', 'spraay-batch-payouts-for-woocommerce' ),
+			self::STATUS_CONFIRMED => __( 'Confirmed', 'spraay-batch-payouts-for-woocommerce' ),
+			self::STATUS_FAILED    => __( 'Failed', 'spraay-batch-payouts-for-woocommerce' ),
 		);
 	}
 
@@ -201,10 +201,10 @@ class Spraay_Batch {
 		if ( $batch_id ) {
 			$batch = self::get( $batch_id );
 			if ( ! $batch ) {
-				return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts' ), array( 'status' => 404 ) );
+				return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 404 ) );
 			}
 			if ( ! self::is_editable( $batch ) ) {
-				return new WP_Error( 'spraay_locked', __( 'This batch has been submitted and can no longer be edited.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+				return new WP_Error( 'spraay_locked', __( 'This batch has been submitted and can no longer be edited.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 			}
 		}
 
@@ -249,7 +249,7 @@ class Spraay_Batch {
 
 		if ( ! $batch_id ) {
 			$wpdb->query( 'ROLLBACK' );
-			return new WP_Error( 'spraay_db_error', __( 'Could not save the batch.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_db_error', __( 'Could not save the batch.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		foreach ( $items as $item ) {
@@ -290,11 +290,11 @@ class Spraay_Batch {
 	 */
 	private static function validate_items( array $raw_items, $batch_id ) {
 		if ( ! $raw_items ) {
-			return new WP_Error( 'spraay_empty_batch', __( 'Add at least one recipient to the batch.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_empty_batch', __( 'Add at least one recipient to the batch.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		if ( count( $raw_items ) > self::MAX_RECIPIENTS ) {
 			/* translators: %d: maximum recipients. */
-			return new WP_Error( 'spraay_batch_too_large', sprintf( __( 'A batch can contain at most %d recipients.', 'spraay-batch-payouts' ), self::MAX_RECIPIENTS ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_batch_too_large', sprintf( __( 'A batch can contain at most %d recipients.', 'spraay-batch-payouts-for-woocommerce' ), self::MAX_RECIPIENTS ), array( 'status' => 400 ) );
 		}
 
 		$recipients = Spraay_Recipient::get_many( wp_list_pluck( $raw_items, 'recipient_id' ) );
@@ -305,20 +305,20 @@ class Spraay_Batch {
 		foreach ( $raw_items as $raw ) {
 			$recipient_id = isset( $raw['recipient_id'] ) ? absint( $raw['recipient_id'] ) : 0;
 			if ( ! isset( $recipients[ $recipient_id ] ) ) {
-				return new WP_Error( 'spraay_unknown_recipient', __( 'One of the selected recipients no longer exists.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+				return new WP_Error( 'spraay_unknown_recipient', __( 'One of the selected recipients no longer exists.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 			}
 			$label = $recipients[ $recipient_id ]['label'];
 
 			if ( isset( $seen[ $recipient_id ] ) ) {
 				/* translators: %s: recipient label. */
-				return new WP_Error( 'spraay_duplicate_recipient', sprintf( __( '%s appears more than once. Combine their amounts into one line.', 'spraay-batch-payouts' ), $label ), array( 'status' => 400 ) );
+				return new WP_Error( 'spraay_duplicate_recipient', sprintf( __( '%s appears more than once. Combine their amounts into one line.', 'spraay-batch-payouts-for-woocommerce' ), $label ), array( 'status' => 400 ) );
 			}
 			$seen[ $recipient_id ] = true;
 
 			$amount = Spraay_Amount::normalize( isset( $raw['amount'] ) ? (string) $raw['amount'] : '' );
 			if ( false === $amount || Spraay_Amount::to_units( $amount ) <= 0 ) {
 				/* translators: %s: recipient label. */
-				return new WP_Error( 'spraay_invalid_amount', sprintf( __( 'Enter a positive amount (max 6 decimals) for %s.', 'spraay-batch-payouts' ), $label ), array( 'status' => 400 ) );
+				return new WP_Error( 'spraay_invalid_amount', sprintf( __( 'Enter a positive amount (max 6 decimals) for %s.', 'spraay-batch-payouts-for-woocommerce' ), $label ), array( 'status' => 400 ) );
 			}
 
 			$order_ids = isset( $raw['wc_order_ids'] ) && is_array( $raw['wc_order_ids'] ) ? array_values( array_unique( array_filter( array_map( 'absint', $raw['wc_order_ids'] ) ) ) ) : array();
@@ -327,7 +327,7 @@ class Spraay_Batch {
 				return new WP_Error(
 					'spraay_order_already_paid',
 					/* translators: 1: comma-separated order numbers, 2: recipient label. */
-					sprintf( __( 'Order(s) %1$s for %2$s are already in a pending or confirmed batch.', 'spraay-batch-payouts' ), implode( ', ', $already ), $label ),
+					sprintf( __( 'Order(s) %1$s for %2$s are already in a pending or confirmed batch.', 'spraay-batch-payouts-for-woocommerce' ), implode( ', ', $already ), $label ),
 					array( 'status' => 409 )
 				);
 			}
@@ -377,13 +377,13 @@ class Spraay_Batch {
 
 		$batch = self::get( $batch_id );
 		if ( ! $batch ) {
-			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts' ), array( 'status' => 404 ) );
+			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 404 ) );
 		}
 		if ( ! self::is_editable( $batch ) ) {
-			return new WP_Error( 'spraay_locked', __( 'This batch has already been submitted.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_locked', __( 'This batch has already been submitted.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 		if ( '' !== $sender && ! Spraay_Address::is_valid( $sender ) ) {
-			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		// Always estimate on the currently configured network, which is what the wallet will use.
@@ -401,7 +401,7 @@ class Spraay_Batch {
 			return $estimate;
 		}
 		if ( ! $estimate['supported'] ) {
-			return new WP_Error( 'spraay_chain_unsupported', __( 'The Spraay gateway reports that it cannot currently settle batches on this network.', 'spraay-batch-payouts' ), array( 'status' => 502 ) );
+			return new WP_Error( 'spraay_chain_unsupported', __( 'The Spraay gateway reports that it cannot currently settle batches on this network.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 502 ) );
 		}
 
 		// The fee is added on top of the payouts at the gateway's reported rate.
@@ -452,7 +452,7 @@ class Spraay_Batch {
 			)
 		);
 		if ( ! $updated && ! self::is_approved( $batch_id ) ) {
-			return new WP_Error( 'spraay_not_estimated', __( 'Only estimated batches can be approved. Re-run the estimate.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_not_estimated', __( 'Only estimated batches can be approved. Re-run the estimate.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 
 		do_action( 'spraay_batch_approved', absint( $batch_id ), absint( $user_id ) );
@@ -475,17 +475,17 @@ class Spraay_Batch {
 		$batch_id = absint( $batch_id );
 
 		if ( ! Spraay_Address::is_valid( $sender ) ) {
-			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_invalid_wallet', __( 'Connected wallet address is invalid.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		if ( ! self::is_approved( $batch_id ) ) {
-			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 		$conflicts = Spraay_WC_Integration::find_conflicting_orders( $batch_id );
 		if ( $conflicts ) {
 			return new WP_Error(
 				'spraay_order_already_paid',
 				/* translators: %s: comma-separated order numbers. */
-				sprintf( __( 'Order(s) %s were paid by another batch since this one was built. Edit the batch and remove them.', 'spraay-batch-payouts' ), implode( ', ', $conflicts ) ),
+				sprintf( __( 'Order(s) %s were paid by another batch since this one was built. Edit the batch and remove them.', 'spraay-batch-payouts-for-woocommerce' ), implode( ', ', $conflicts ) ),
 				array( 'status' => 409 )
 			);
 		}
@@ -494,7 +494,7 @@ class Spraay_Batch {
 		$chain = Spraay_Plugin::get_chain( $batch['chain_id'] );
 		$body  = self::gateway_body( $batch_id, $sender );
 		if ( ! $chain || is_wp_error( $body ) ) {
-			return is_wp_error( $body ) ? $body : new WP_Error( 'spraay_chain_unsupported', __( 'This batch is on an unsupported network.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return is_wp_error( $body ) ? $body : new WP_Error( 'spraay_chain_unsupported', __( 'This batch is on an unsupported network.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$result = ( new Spraay_Gateway_Client() )->execute( $body );
@@ -508,21 +508,21 @@ class Spraay_Batch {
 		$subtotal = Spraay_Amount::to_units( $batch['total_amount'] );
 		$problems = array();
 		if ( strtolower( $tx['to'] ) !== strtolower( $chain['spraay_contract'] ) ) {
-			$problems[] = __( 'transaction is not addressed to the Spraay contract', 'spraay-batch-payouts' );
+			$problems[] = __( 'transaction is not addressed to the Spraay contract', 'spraay-batch-payouts-for-woocommerce' );
 		}
 		if ( (int) $tx['chain_id'] !== (int) $batch['chain_id'] ) {
-			$problems[] = __( 'transaction is for a different network', 'spraay-batch-payouts' );
+			$problems[] = __( 'transaction is for a different network', 'spraay-batch-payouts-for-woocommerce' );
 		}
 		if ( '' !== ltrim( preg_replace( '/^0x/i', '', $tx['value'] ), '0' ) ) {
-			$problems[] = __( 'transaction asks for ETH', 'spraay-batch-payouts' );
+			$problems[] = __( 'transaction asks for ETH', 'spraay-batch-payouts-for-woocommerce' );
 		}
 		if ( $approval && ( strtolower( $approval['spender'] ) !== strtolower( $chain['spraay_contract'] ) || strtolower( $approval['token'] ) !== strtolower( $body['token'] ) ) ) {
-			$problems[] = __( 'approval is for an unexpected token or spender', 'spraay-batch-payouts' );
+			$problems[] = __( 'approval is for an unexpected token or spender', 'spraay-batch-payouts-for-woocommerce' );
 		}
 		// The gateway's batch summary is human-decimal ("1.5"), not base units.
 		$gateway_total = $result['batch']['total_amount'];
 		if ( '' !== $gateway_total && Spraay_Amount::to_units( $gateway_total ) !== $subtotal ) {
-			$problems[] = __( 'payout total differs from this batch', 'spraay-batch-payouts' );
+			$problems[] = __( 'payout total differs from this batch', 'spraay-batch-payouts-for-woocommerce' );
 			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( sprintf( 'Spraay batch %d total mismatch: expected %d base units (%s USDC), gateway returned totalAmount %s (parsed as %d base units).', $batch_id, $subtotal, Spraay_Amount::from_units( $subtotal ), wp_json_encode( $gateway_total ), Spraay_Amount::to_units( $gateway_total ) ) );
@@ -532,7 +532,7 @@ class Spraay_Batch {
 			return new WP_Error(
 				'spraay_unsafe_transaction',
 				/* translators: %s: list of problems. */
-				sprintf( __( 'The gateway transaction was rejected (%s). Nothing was signed.', 'spraay-batch-payouts' ), implode( '; ', $problems ) ),
+				sprintf( __( 'The gateway transaction was rejected (%s). Nothing was signed.', 'spraay-batch-payouts-for-woocommerce' ), implode( '; ', $problems ) ),
 				array( 'status' => 502 )
 			);
 		}
@@ -571,7 +571,7 @@ class Spraay_Batch {
 		$tx_hash  = strtolower( (string) $tx_hash );
 
 		if ( ! preg_match( '/^0x[0-9a-f]{64}$/', $tx_hash ) ) {
-			return new WP_Error( 'spraay_invalid_tx', __( 'Transaction hash is invalid.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_invalid_tx', __( 'Transaction hash is invalid.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$batch = self::get( $batch_id );
@@ -582,10 +582,10 @@ class Spraay_Batch {
 					'tx_hash' => $tx_hash,
 				);
 			}
-			return new WP_Error( 'spraay_already_submitted', __( 'This batch was already submitted with a different transaction.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_already_submitted', __( 'This batch was already submitted with a different transaction.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 		if ( ! self::is_approved( $batch_id ) ) {
-			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_not_approved', __( 'The batch must be reviewed and approved before execution.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 
 		// Atomically claim the batch so concurrent requests can't record two transactions.
@@ -602,7 +602,7 @@ class Spraay_Batch {
 			)
 		);
 		if ( ! $claimed ) {
-			return new WP_Error( 'spraay_already_submitted', __( 'This batch is not awaiting execution (it may already have been submitted).', 'spraay-batch-payouts' ), array( 'status' => 409 ) );
+			return new WP_Error( 'spraay_already_submitted', __( 'This batch is not awaiting execution (it may already have been submitted).', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 409 ) );
 		}
 		self::set_item_status( $batch_id, self::STATUS_PENDING );
 		self::store_gateway_response(
@@ -638,14 +638,14 @@ class Spraay_Batch {
 		$settings = Spraay_Plugin::get_settings();
 		$chain    = Spraay_Plugin::get_chain( $settings['chain_id'] );
 		if ( ! $chain || ! isset( $chain['tokens'][ $settings['token'] ] ) ) {
-			return new WP_Error( 'spraay_chain_unsupported', __( 'The configured network or token is not supported.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_chain_unsupported', __( 'The configured network or token is not supported.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$recipients = array();
 		$amounts    = array();
 		foreach ( self::get_items( $batch_id ) as $item ) {
 			if ( empty( $item['wallet_address'] ) ) {
-				return new WP_Error( 'spraay_unknown_recipient', __( 'A recipient in this batch was deleted. Edit the batch and remove it.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+				return new WP_Error( 'spraay_unknown_recipient', __( 'A recipient in this batch was deleted. Edit the batch and remove it.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 			}
 			$recipients[] = $item['wallet_address'];
 			$amounts[]    = (string) Spraay_Amount::to_units( $item['amount'] );
@@ -731,10 +731,10 @@ class Spraay_Batch {
 
 		$batch = self::get( $batch_id );
 		if ( ! $batch ) {
-			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 		if ( ! self::is_editable( $batch ) ) {
-			return new WP_Error( 'spraay_locked', __( 'Submitted batches are kept as payout records and cannot be deleted.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_locked', __( 'Submitted batches are kept as payout records and cannot be deleted.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery

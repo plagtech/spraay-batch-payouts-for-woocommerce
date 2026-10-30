@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:          Spraay Batch Payouts
+ * Plugin Name:          Spraay Batch Payouts for WooCommerce
  * Plugin URI:           https://spraay.app
  * Description:          Batch-pay suppliers, vendors, affiliates and contractors in USDC on Base through the Spraay Protocol gateway. A payout tool — it does not touch customer checkout.
  * Version:              0.1.0
@@ -11,7 +11,7 @@
  * Author URI:           https://plagtech.net
  * License:              GPL v2 or later
  * License URI:          https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:          spraay-batch-payouts
+ * Text Domain:          spraay-batch-payouts-for-woocommerce
  * Domain Path:          /languages
  * WC requires at least: 7.0
  *

@@ -64,7 +64,7 @@ The merchant also needs a browser wallet holding USDC on Base (enough for the pa
 
 ## Installation
 
-1. Copy this repository into `wp-content/plugins/spraay-batch-payouts/`, or zip it and upload it under **Plugins → Add New → Upload**.
+1. Copy this repository into `wp-content/plugins/spraay-batch-payouts-for-woocommerce/`, or zip it and upload it under **Plugins → Add New → Upload**.
 2. Activate **Spraay Batch Payouts**. WooCommerce must be active. Activation creates three tables: `{prefix}spraay_recipients`, `{prefix}spraay_batches` and `{prefix}spraay_batch_items`.
 3. Open **Spraay Payouts → Settings**, check the gateway URL (default `https://gateway.spraay.app`), and enter your Spraay API key.
 
@@ -119,7 +119,7 @@ ethers.js 6.13.5 (MIT) is bundled at `admin/js/ethers.min.js`, so nothing is loa
 ## Project layout
 
 ```
-spraay-batch-payouts.php        Plugin header, autoloader, activation hooks
+spraay-batch-payouts-for-woocommerce.php  Plugin header, autoloader, activation hooks
 uninstall.php                   Drops tables/options (define SPRAAY_KEEP_DATA_ON_UNINSTALL to keep data)
 includes/
   class-spraay-plugin.php       Singleton bootstrap, schema, settings, chain config

@@ -39,12 +39,12 @@ class Spraay_Recipients_List_Table extends WP_List_Table {
 	public function get_columns() {
 		return array(
 			'cb'             => '<input type="checkbox" />',
-			'label'          => __( 'Label', 'spraay-batch-payouts' ),
-			'wallet_address' => __( 'Wallet', 'spraay-batch-payouts' ),
-			'email'          => __( 'Email', 'spraay-batch-payouts' ),
-			'default_amount' => __( 'Default amount', 'spraay-batch-payouts' ),
-			'wc_vendor_id'   => __( 'WC vendor', 'spraay-batch-payouts' ),
-			'created_at'     => __( 'Added', 'spraay-batch-payouts' ),
+			'label'          => __( 'Label', 'spraay-batch-payouts-for-woocommerce' ),
+			'wallet_address' => __( 'Wallet', 'spraay-batch-payouts-for-woocommerce' ),
+			'email'          => __( 'Email', 'spraay-batch-payouts-for-woocommerce' ),
+			'default_amount' => __( 'Default amount', 'spraay-batch-payouts-for-woocommerce' ),
+			'wc_vendor_id'   => __( 'WC vendor', 'spraay-batch-payouts-for-woocommerce' ),
+			'created_at'     => __( 'Added', 'spraay-batch-payouts-for-woocommerce' ),
 		);
 	}
 
@@ -68,7 +68,7 @@ class Spraay_Recipients_List_Table extends WP_List_Table {
 	 * @return array
 	 */
 	protected function get_bulk_actions() {
-		return array( 'spraay_bulk_delete' => __( 'Delete', 'spraay-batch-payouts' ) );
+		return array( 'spraay_bulk_delete' => __( 'Delete', 'spraay-batch-payouts-for-woocommerce' ) );
 	}
 
 	/**
@@ -135,8 +135,8 @@ class Spraay_Recipients_List_Table extends WP_List_Table {
 		);
 
 		$actions = array(
-			'edit'   => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'spraay-batch-payouts' ) . '</a>',
-			'delete' => '<a href="' . esc_url( $delete_url ) . '" class="spraay-confirm" data-confirm="' . esc_attr__( 'Delete this recipient?', 'spraay-batch-payouts' ) . '">' . esc_html__( 'Delete', 'spraay-batch-payouts' ) . '</a>',
+			'edit'   => '<a href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit', 'spraay-batch-payouts-for-woocommerce' ) . '</a>',
+			'delete' => '<a href="' . esc_url( $delete_url ) . '" class="spraay-confirm" data-confirm="' . esc_attr__( 'Delete this recipient?', 'spraay-batch-payouts-for-woocommerce' ) . '">' . esc_html__( 'Delete', 'spraay-batch-payouts-for-woocommerce' ) . '</a>',
 		);
 
 		return '<strong><a href="' . esc_url( $edit_url ) . '">' . esc_html( $item['label'] ) . '</a></strong>' . $this->row_actions( $actions );
@@ -198,6 +198,6 @@ class Spraay_Recipients_List_Table extends WP_List_Table {
 	 * Empty-state message.
 	 */
 	public function no_items() {
-		esc_html_e( 'No recipients yet. Add one or import a CSV.', 'spraay-batch-payouts' );
+		esc_html_e( 'No recipients yet. Add one or import a CSV.', 'spraay-batch-payouts-for-woocommerce' );
 	}
 }

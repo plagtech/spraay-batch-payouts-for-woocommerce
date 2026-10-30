@@ -18,7 +18,7 @@
 	var sprintf = window.wp && window.wp.i18n ? window.wp.i18n.sprintf : function ( s ) {
 		return s;
 	};
-	var DOMAIN = 'spraay-batch-payouts';
+	var DOMAIN = 'spraay-batch-payouts-for-woocommerce';
 
 	// Confirm destructive row actions.
 	document.addEventListener( 'click', function ( event ) {

@@ -48,17 +48,17 @@ class Spraay_CSV_Handler {
 	 */
 	public static function validate_upload( $file ) {
 		if ( ! is_array( $file ) || empty( $file['tmp_name'] ) || ! isset( $file['error'] ) || UPLOAD_ERR_OK !== (int) $file['error'] ) {
-			return new WP_Error( 'spraay_upload_failed', __( 'The file did not upload. Please try again.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_upload_failed', __( 'The file did not upload. Please try again.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		if ( ! is_uploaded_file( $file['tmp_name'] ) ) {
-			return new WP_Error( 'spraay_upload_invalid', __( 'Invalid upload.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_upload_invalid', __( 'Invalid upload.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		if ( (int) $file['size'] > self::MAX_UPLOAD_BYTES ) {
-			return new WP_Error( 'spraay_upload_too_large', __( 'CSV files must be 2 MB or smaller.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_upload_too_large', __( 'CSV files must be 2 MB or smaller.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		$ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
 		if ( 'csv' !== $ext ) {
-			return new WP_Error( 'spraay_upload_type', __( 'Please upload a .csv file.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_upload_type', __( 'Please upload a .csv file.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		return $file['tmp_name'];
 	}
@@ -74,13 +74,13 @@ class Spraay_CSV_Handler {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Reading a validated upload.
 		$handle = fopen( $path, 'r' );
 		if ( ! $handle ) {
-			return new WP_Error( 'spraay_csv_unreadable', __( 'Could not read the CSV file.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_csv_unreadable', __( 'Could not read the CSV file.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$header = fgetcsv( $handle );
 		if ( ! $header ) {
 			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-			return new WP_Error( 'spraay_csv_empty', __( 'The CSV file is empty.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_csv_empty', __( 'The CSV file is empty.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$columns = array();
@@ -127,7 +127,7 @@ class Spraay_CSV_Handler {
 			return $rows;
 		}
 		if ( $rows && ! array_key_exists( 'wallet_address', $rows[0] ) ) {
-			return new WP_Error( 'spraay_csv_columns', __( 'The CSV needs a wallet_address column (plus optional label, amount, email).', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_csv_columns', __( 'The CSV needs a wallet_address column (plus optional label, amount, email).', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$result = array(
@@ -170,7 +170,7 @@ class Spraay_CSV_Handler {
 
 			if ( is_wp_error( $saved ) ) {
 				/* translators: 1: CSV line number, 2: error message. */
-				$result['errors'][] = sprintf( __( 'Line %1$d: %2$s', 'spraay-batch-payouts' ), $row['_line'], $saved->get_error_message() );
+				$result['errors'][] = sprintf( __( 'Line %1$d: %2$s', 'spraay-batch-payouts-for-woocommerce' ), $row['_line'], $saved->get_error_message() );
 				continue;
 			}
 
@@ -199,7 +199,7 @@ class Spraay_CSV_Handler {
 			return $rows;
 		}
 		if ( $rows && ( ! array_key_exists( 'vendor', $rows[0] ) || ! array_key_exists( 'commission', $rows[0] ) ) ) {
-			return new WP_Error( 'spraay_csv_columns', __( 'The commission export needs Vendor Name and Total Commission Amount columns.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_csv_columns', __( 'The commission export needs Vendor Name and Total Commission Amount columns.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$settled = Spraay_WC_Integration::get_settled_order_ids();
@@ -217,7 +217,7 @@ class Spraay_CSV_Handler {
 			$amount = Spraay_Amount::normalize( preg_replace( '/[^\d.]/', '', $row['commission'] ) );
 			if ( false === $amount || '' === $row['vendor'] ) {
 				/* translators: %d: CSV line number. */
-				$errors[] = sprintf( __( 'Line %d: missing vendor or invalid commission amount.', 'spraay-batch-payouts' ), $row['_line'] );
+				$errors[] = sprintf( __( 'Line %d: missing vendor or invalid commission amount.', 'spraay-batch-payouts-for-woocommerce' ), $row['_line'] );
 				continue;
 			}
 

@@ -69,8 +69,8 @@ class Spraay_Admin {
 	 */
 	public function register_menu() {
 		$this->hooks[ self::PAGE_DASHBOARD ] = add_menu_page(
-			__( 'Spraay Payouts', 'spraay-batch-payouts' ),
-			__( 'Spraay Payouts', 'spraay-batch-payouts' ),
+			__( 'Spraay Payouts', 'spraay-batch-payouts-for-woocommerce' ),
+			__( 'Spraay Payouts', 'spraay-batch-payouts-for-woocommerce' ),
 			self::CAPABILITY,
 			self::PAGE_DASHBOARD,
 			array( $this, 'render_dashboard' ),
@@ -79,11 +79,11 @@ class Spraay_Admin {
 		);
 
 		$pages = array(
-			self::PAGE_DASHBOARD  => array( __( 'Dashboard', 'spraay-batch-payouts' ), 'render_dashboard' ),
-			self::PAGE_RECIPIENTS => array( __( 'Recipients', 'spraay-batch-payouts' ), 'render_recipients' ),
-			self::PAGE_NEW_BATCH  => array( __( 'New Batch', 'spraay-batch-payouts' ), 'render_new_batch' ),
-			self::PAGE_HISTORY    => array( __( 'Batch History', 'spraay-batch-payouts' ), 'render_history' ),
-			self::PAGE_SETTINGS   => array( __( 'Settings', 'spraay-batch-payouts' ), 'render_settings' ),
+			self::PAGE_DASHBOARD  => array( __( 'Dashboard', 'spraay-batch-payouts-for-woocommerce' ), 'render_dashboard' ),
+			self::PAGE_RECIPIENTS => array( __( 'Recipients', 'spraay-batch-payouts-for-woocommerce' ), 'render_recipients' ),
+			self::PAGE_NEW_BATCH  => array( __( 'New Batch', 'spraay-batch-payouts-for-woocommerce' ), 'render_new_batch' ),
+			self::PAGE_HISTORY    => array( __( 'Batch History', 'spraay-batch-payouts-for-woocommerce' ), 'render_history' ),
+			self::PAGE_SETTINGS   => array( __( 'Settings', 'spraay-batch-payouts-for-woocommerce' ), 'render_settings' ),
 		);
 		foreach ( $pages as $slug => $page ) {
 			$this->hooks[ $slug ] = add_submenu_page( self::PAGE_DASHBOARD, $page[0], $page[0], self::CAPABILITY, $slug, array( $this, $page[1] ) );
@@ -111,7 +111,7 @@ class Spraay_Admin {
 	 * @return array
 	 */
 	public function plugin_action_links( $links ) {
-		array_unshift( $links, '<a href="' . esc_url( self::page_url( self::PAGE_SETTINGS ) ) . '">' . esc_html__( 'Settings', 'spraay-batch-payouts' ) . '</a>' );
+		array_unshift( $links, '<a href="' . esc_url( self::page_url( self::PAGE_SETTINGS ) ) . '">' . esc_html__( 'Settings', 'spraay-batch-payouts-for-woocommerce' ) . '</a>' );
 		return $links;
 	}
 
@@ -156,7 +156,7 @@ class Spraay_Admin {
 		wp_enqueue_script( 'spraay-ethers', $ethers_url, array(), self::ETHERS_VERSION, true );
 		wp_enqueue_script( 'spraay-wallet', SPRAAY_BP_URL . 'admin/js/spraay-wallet.js', array( 'spraay-ethers' ), SPRAAY_BP_VERSION, true );
 		wp_enqueue_script( 'spraay-admin', SPRAAY_BP_URL . 'admin/js/spraay-admin.js', array( 'spraay-wallet', 'wp-api-fetch', 'wp-i18n' ), SPRAAY_BP_VERSION, true );
-		wp_set_script_translations( 'spraay-admin', 'spraay-batch-payouts', SPRAAY_BP_PATH . 'languages' );
+		wp_set_script_translations( 'spraay-admin', 'spraay-batch-payouts-for-woocommerce', SPRAAY_BP_PATH . 'languages' );
 
 		wp_add_inline_script( 'spraay-admin', 'window.spraayConfig = ' . wp_json_encode( $this->builder_config() ) . ';', 'before' );
 	}
@@ -232,7 +232,7 @@ class Spraay_Admin {
 		if ( '' !== $url ) {
 			$clean['gateway_url'] = untrailingslashit( $url );
 		} else {
-			add_settings_error( Spraay_Plugin::OPTION_SETTINGS, 'gateway_url', __( 'The gateway URL must be a valid https:// URL. The previous value was kept.', 'spraay-batch-payouts' ) );
+			add_settings_error( Spraay_Plugin::OPTION_SETTINGS, 'gateway_url', __( 'The gateway URL must be a valid https:// URL. The previous value was kept.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$chain_id = isset( $input['chain_id'] ) ? absint( $input['chain_id'] ) : 0;
@@ -348,7 +348,7 @@ class Spraay_Admin {
 		if ( $batch_id ) {
 			$batch = Spraay_Batch::get( $batch_id );
 			if ( ! $batch ) {
-				wp_die( esc_html__( 'Batch not found.', 'spraay-batch-payouts' ) );
+				wp_die( esc_html__( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ) );
 			}
 			$this->view(
 				'batch-detail',
@@ -428,7 +428,7 @@ class Spraay_Admin {
 			exit;
 		}
 
-		self::flash( 'success', $id ? __( 'Recipient updated.', 'spraay-batch-payouts' ) : __( 'Recipient added.', 'spraay-batch-payouts' ) );
+		self::flash( 'success', $id ? __( 'Recipient updated.', 'spraay-batch-payouts-for-woocommerce' ) : __( 'Recipient added.', 'spraay-batch-payouts-for-woocommerce' ) );
 		wp_safe_redirect( self::page_url( self::PAGE_RECIPIENTS ) );
 		exit;
 	}
@@ -442,7 +442,7 @@ class Spraay_Admin {
 		check_admin_referer( 'spraay_delete_recipient_' . $id );
 
 		$result = Spraay_Recipient::delete( $id );
-		self::flash( is_wp_error( $result ) ? 'error' : 'success', is_wp_error( $result ) ? $result->get_error_message() : __( 'Recipient deleted.', 'spraay-batch-payouts' ) );
+		self::flash( is_wp_error( $result ) ? 'error' : 'success', is_wp_error( $result ) ? $result->get_error_message() : __( 'Recipient deleted.', 'spraay-batch-payouts-for-woocommerce' ) );
 		wp_safe_redirect( self::page_url( self::PAGE_RECIPIENTS ) );
 		exit;
 	}
@@ -473,10 +473,10 @@ class Spraay_Admin {
 				}
 			}
 			/* translators: %d: number of recipients deleted. */
-			$message = sprintf( _n( '%d recipient deleted.', '%d recipients deleted.', $deleted, 'spraay-batch-payouts' ), $deleted );
+			$message = sprintf( _n( '%d recipient deleted.', '%d recipients deleted.', $deleted, 'spraay-batch-payouts-for-woocommerce' ), $deleted );
 			if ( $errors ) {
 				/* translators: %d: number of recipients kept. */
-				$message .= ' ' . sprintf( _n( '%d was kept because it is part of a submitted batch.', '%d were kept because they are part of submitted batches.', count( $errors ), 'spraay-batch-payouts' ), count( $errors ) );
+				$message .= ' ' . sprintf( _n( '%d was kept because it is part of a submitted batch.', '%d were kept because they are part of submitted batches.', count( $errors ), 'spraay-batch-payouts-for-woocommerce' ), count( $errors ) );
 			}
 			self::flash( $errors ? 'warning' : 'success', $message );
 		}
@@ -500,7 +500,7 @@ class Spraay_Admin {
 			self::flash( 'error', $result->get_error_message() );
 		} else {
 			/* translators: 1: created count, 2: updated count. */
-			$message = sprintf( __( 'Import complete: %1$d added, %2$d updated.', 'spraay-batch-payouts' ), $result['created'], $result['updated'] );
+			$message = sprintf( __( 'Import complete: %1$d added, %2$d updated.', 'spraay-batch-payouts-for-woocommerce' ), $result['created'], $result['updated'] );
 			self::flash( $result['errors'] ? 'warning' : 'success', $message, array_slice( $result['errors'], 0, 20 ) );
 		}
 
@@ -547,7 +547,7 @@ class Spraay_Admin {
 		} else {
 			$statuses = Spraay_Batch::statuses();
 			/* translators: %s: batch status. */
-			self::flash( 'success', sprintf( __( 'Status refreshed: %s.', 'spraay-batch-payouts' ), $statuses[ $result['status'] ] ) );
+			self::flash( 'success', sprintf( __( 'Status refreshed: %s.', 'spraay-batch-payouts-for-woocommerce' ), $statuses[ $result['status'] ] ) );
 		}
 
 		wp_safe_redirect( self::page_url( self::PAGE_HISTORY, array( 'batch_id' => $id ) ) );
@@ -563,7 +563,7 @@ class Spraay_Admin {
 		check_admin_referer( 'spraay_delete_batch_' . $id );
 
 		$result = Spraay_Batch::delete( $id );
-		self::flash( is_wp_error( $result ) ? 'error' : 'success', is_wp_error( $result ) ? $result->get_error_message() : __( 'Draft batch deleted.', 'spraay-batch-payouts' ) );
+		self::flash( is_wp_error( $result ) ? 'error' : 'success', is_wp_error( $result ) ? $result->get_error_message() : __( 'Draft batch deleted.', 'spraay-batch-payouts-for-woocommerce' ) );
 		wp_safe_redirect( self::page_url( self::PAGE_HISTORY ) );
 		exit;
 	}
@@ -579,7 +579,7 @@ class Spraay_Admin {
 	 */
 	private function assert_capability() {
 		if ( ! current_user_can( self::CAPABILITY ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage Spraay payouts.', 'spraay-batch-payouts' ), 403 );
+			wp_die( esc_html__( 'You do not have permission to manage Spraay payouts.', 'spraay-batch-payouts-for-woocommerce' ), 403 );
 		}
 	}
 

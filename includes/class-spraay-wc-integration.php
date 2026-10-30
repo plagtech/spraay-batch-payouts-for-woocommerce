@@ -72,7 +72,7 @@ class Spraay_WC_Integration {
 			'wcfm'            => 'WCFM Marketplace',
 			'wc-vendors'      => 'WC Vendors',
 		);
-		return isset( $labels[ $slug ] ) ? $labels[ $slug ] : __( 'None detected', 'spraay-batch-payouts' );
+		return isset( $labels[ $slug ] ) ? $labels[ $slug ] : __( 'None detected', 'spraay-batch-payouts-for-woocommerce' );
 	}
 
 	/**
@@ -82,15 +82,15 @@ class Spraay_WC_Integration {
 	 */
 	public static function available_sources() {
 		$sources = array(
-			'order_meta' => __( 'Order supplier fields', 'spraay-batch-payouts' ),
+			'order_meta' => __( 'Order supplier fields', 'spraay-batch-payouts-for-woocommerce' ),
 		);
 
 		$vendor = self::detect_vendor_plugin();
 		if ( 'product-vendors' === $vendor && self::table_exists( 'wcpv_commissions' ) ) {
-			$sources['product_vendors'] = __( 'Product Vendors unpaid commissions', 'spraay-batch-payouts' );
+			$sources['product_vendors'] = __( 'Product Vendors unpaid commissions', 'spraay-batch-payouts-for-woocommerce' );
 		}
 		if ( 'dokan' === $vendor && self::table_exists( 'dokan_orders' ) ) {
-			$sources['dokan'] = __( 'Dokan vendor earnings', 'spraay-batch-payouts' );
+			$sources['dokan'] = __( 'Dokan vendor earnings', 'spraay-batch-payouts-for-woocommerce' );
 		}
 
 		/**
@@ -133,7 +133,7 @@ class Spraay_WC_Integration {
 	 */
 	public static function get_obligations( $source, array $args = array() ) {
 		if ( ! isset( self::available_sources()[ $source ] ) ) {
-			return new WP_Error( 'spraay_unknown_source', __( 'That data source is not available on this site.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_unknown_source', __( 'That data source is not available on this site.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 
 		$args = wp_parse_args(
@@ -145,7 +145,7 @@ class Spraay_WC_Integration {
 		);
 		foreach ( array( 'date_from', 'date_to' ) as $key ) {
 			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $args[ $key ] ) ) {
-				return new WP_Error( 'spraay_invalid_date', __( 'Dates must be in YYYY-MM-DD format.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+				return new WP_Error( 'spraay_invalid_date', __( 'Dates must be in YYYY-MM-DD format.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 			}
 		}
 
@@ -442,7 +442,7 @@ class Spraay_WC_Integration {
 				$order->add_order_note(
 					sprintf(
 						/* translators: 1: payout amount, 2: recipient label, 3: batch ID, 4: explorer URL. */
-						__( 'Spraay payout of %1$s USDC to %2$s confirmed in batch #%3$d. %4$s', 'spraay-batch-payouts' ),
+						__( 'Spraay payout of %1$s USDC to %2$s confirmed in batch #%3$d. %4$s', 'spraay-batch-payouts-for-woocommerce' ),
 						Spraay_Amount::format( $item['amount'] ),
 						$item['label'],
 						absint( $batch_id ),

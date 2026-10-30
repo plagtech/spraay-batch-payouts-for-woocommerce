@@ -58,7 +58,7 @@ class Spraay_Reconciliation {
 	public function add_schedule( $schedules ) {
 		$schedules[ self::CRON_SCHEDULE ] = array(
 			'interval' => 5 * MINUTE_IN_SECONDS,
-			'display'  => __( 'Every five minutes (Spraay reconciliation)', 'spraay-batch-payouts' ),
+			'display'  => __( 'Every five minutes (Spraay reconciliation)', 'spraay-batch-payouts-for-woocommerce' ),
 		);
 		return $schedules;
 	}
@@ -112,7 +112,7 @@ class Spraay_Reconciliation {
 	public static function reconcile_batch( $batch_id ) {
 		$batch = Spraay_Batch::get( $batch_id );
 		if ( ! $batch ) {
-			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts' ), array( 'status' => 404 ) );
+			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 404 ) );
 		}
 
 		if ( Spraay_Batch::STATUS_PENDING === $batch['status'] && ! empty( $batch['tx_hash'] ) ) {
@@ -144,7 +144,7 @@ class Spraay_Reconciliation {
 	private static function check_transaction( array $batch ) {
 		$chain = Spraay_Plugin::get_chain( $batch['chain_id'] );
 		if ( ! $chain ) {
-			return new WP_Error( 'spraay_chain_unsupported', __( 'This batch is on an unsupported network.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_chain_unsupported', __( 'This batch is on an unsupported network.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$receipt = self::rpc( $chain, 'eth_getTransactionReceipt', array( $batch['tx_hash'] ) );
@@ -160,7 +160,7 @@ class Spraay_Reconciliation {
 				if ( null === $tx ) {
 					return array(
 						'status' => Spraay_Batch::STATUS_FAILED,
-						'error'  => __( 'The transaction was never mined (dropped or replaced in the wallet).', 'spraay-batch-payouts' ),
+						'error'  => __( 'The transaction was never mined (dropped or replaced in the wallet).', 'spraay-batch-payouts-for-woocommerce' ),
 					);
 				}
 			}
@@ -178,7 +178,7 @@ class Spraay_Reconciliation {
 		if ( '0x1' !== strtolower( (string) $raw['status'] ) ) {
 			return array(
 				'status' => Spraay_Batch::STATUS_FAILED,
-				'error'  => __( 'The transaction reverted on-chain. No funds were sent.', 'spraay-batch-payouts' ),
+				'error'  => __( 'The transaction reverted on-chain. No funds were sent.', 'spraay-batch-payouts-for-woocommerce' ),
 				'raw'    => $raw,
 			);
 		}
@@ -186,7 +186,7 @@ class Spraay_Reconciliation {
 		if ( strtolower( (string) $raw['to'] ) !== strtolower( $chain['spraay_contract'] ) ) {
 			return array(
 				'status' => Spraay_Batch::STATUS_FAILED,
-				'error'  => __( 'The recorded transaction did not call the Spraay contract.', 'spraay-batch-payouts' ),
+				'error'  => __( 'The recorded transaction did not call the Spraay contract.', 'spraay-batch-payouts-for-woocommerce' ),
 				'raw'    => $raw,
 			);
 		}
@@ -241,12 +241,12 @@ class Spraay_Reconciliation {
 
 		if ( is_wp_error( $response ) ) {
 			/* translators: %s: transport error. */
-			return new WP_Error( 'spraay_rpc_unreachable', sprintf( __( 'Could not reach the network RPC: %s', 'spraay-batch-payouts' ), $response->get_error_message() ) );
+			return new WP_Error( 'spraay_rpc_unreachable', sprintf( __( 'Could not reach the network RPC: %s', 'spraay-batch-payouts-for-woocommerce' ), $response->get_error_message() ) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) || ! is_array( $data ) || isset( $data['error'] ) || ! array_key_exists( 'result', $data ) ) {
-			return new WP_Error( 'spraay_rpc_error', __( 'The network RPC returned an error. Status will be checked again shortly.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_rpc_error', __( 'The network RPC returned an error. Status will be checked again shortly.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		return $data['result'];

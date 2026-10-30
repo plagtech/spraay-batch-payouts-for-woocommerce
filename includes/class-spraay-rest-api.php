@@ -309,7 +309,7 @@ class Spraay_Rest_Api {
 	 */
 	public function get_batch( WP_REST_Request $request ) {
 		if ( ! Spraay_Batch::get( $request['id'] ) ) {
-			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts' ), array( 'status' => 404 ) );
+			return new WP_Error( 'spraay_not_found', __( 'Batch not found.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 404 ) );
 		}
 		return rest_ensure_response( $this->batch_payload( $request['id'] ) );
 	}
@@ -352,7 +352,7 @@ class Spraay_Rest_Api {
 	 */
 	public function approve_batch( WP_REST_Request $request ) {
 		if ( true !== $request['confirm'] ) {
-			return new WP_Error( 'spraay_not_confirmed', __( 'Confirm that you have reviewed the batch.', 'spraay-batch-payouts' ), array( 'status' => 400 ) );
+			return new WP_Error( 'spraay_not_confirmed', __( 'Confirm that you have reviewed the batch.', 'spraay-batch-payouts-for-woocommerce' ), array( 'status' => 400 ) );
 		}
 		$result = Spraay_Batch::approve( $request['id'], get_current_user_id() );
 		if ( is_wp_error( $result ) ) {

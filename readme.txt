@@ -1,8 +1,8 @@
-=== Spraay Batch Payouts ===
+=== Spraay Batch Payouts for WooCommerce ===
 Contributors: plagtech
 Tags: woocommerce, payouts, usdc, base, vendors
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 0.1.0
 License: GPLv2 or later

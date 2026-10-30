@@ -12,8 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div class="wrap spraay-wrap">
-	<h1 class="wp-heading-inline"><?php esc_html_e( 'Batch history', 'spraay-batch-payouts' ); ?></h1>
-	<a href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_NEW_BATCH ) ); ?>" class="page-title-action"><?php esc_html_e( 'New batch', 'spraay-batch-payouts' ); ?></a>
+	<h1 class="wp-heading-inline"><?php esc_html_e( 'Batch history', 'spraay-batch-payouts-for-woocommerce' ); ?></h1>
+	<a href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_NEW_BATCH ) ); ?>" class="page-title-action"><?php esc_html_e( 'New batch', 'spraay-batch-payouts-for-woocommerce' ); ?></a>
 	<hr class="wp-header-end" />
 
 	<?php $table->views(); ?>

@@ -1,0 +1,8 @@
+.git
+.gitattributes
+.distignore
+node_modules
+tests
+README.md
+woocommerce-spraay-payouts-brief.md
+spraay-gateway-api-spec-for-woocommerce.md

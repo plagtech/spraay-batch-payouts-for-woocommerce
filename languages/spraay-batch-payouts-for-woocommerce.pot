@@ -2,13 +2,13 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Spraay Batch Payouts 0.1.0\n"
+"Project-Id-Version: Spraay Batch Payouts for WooCommerce 0.1.0\n"
 "Report-Msgid-Bugs-To: https://spraay.app\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-10-29\n"
-"X-Domain: spraay-batch-payouts\n"
+"X-Domain: spraay-batch-payouts-for-woocommerce\n"
 
 #: admin/js/spraay-admin.js:126 admin/js/spraay-admin.js:138
 msgid "Something went wrong."

@@ -172,19 +172,19 @@ class Spraay_Recipient {
 	public static function sanitize( array $data ) {
 		$wallet = isset( $data['wallet_address'] ) ? trim( sanitize_text_field( $data['wallet_address'] ) ) : '';
 		if ( ! Spraay_Address::is_valid( $wallet ) ) {
-			return new WP_Error( 'spraay_invalid_wallet', __( 'Wallet address is not a valid EVM address (check the 0x prefix, length and checksum).', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_invalid_wallet', __( 'Wallet address is not a valid EVM address (check the 0x prefix, length and checksum).', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$email = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
 		if ( isset( $data['email'] ) && '' !== trim( $data['email'] ) && ! is_email( $email ) ) {
-			return new WP_Error( 'spraay_invalid_email', __( 'Email address is not valid.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_invalid_email', __( 'Email address is not valid.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$amount = null;
 		if ( isset( $data['default_amount'] ) && '' !== trim( (string) $data['default_amount'] ) ) {
 			$amount = Spraay_Amount::normalize( sanitize_text_field( (string) $data['default_amount'] ) );
 			if ( false === $amount ) {
-				return new WP_Error( 'spraay_invalid_amount', __( 'Default amount must be a positive number with at most 6 decimal places.', 'spraay-batch-payouts' ) );
+				return new WP_Error( 'spraay_invalid_amount', __( 'Default amount must be a positive number with at most 6 decimal places.', 'spraay-batch-payouts-for-woocommerce' ) );
 			}
 		}
 
@@ -215,7 +215,7 @@ class Spraay_Recipient {
 			return $clean;
 		}
 		if ( self::find_by_wallet( $clean['wallet_address'] ) ) {
-			return new WP_Error( 'spraay_duplicate_wallet', __( 'A recipient with this wallet address already exists.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_duplicate_wallet', __( 'A recipient with this wallet address already exists.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$now                 = current_time( 'mysql', true );
@@ -224,7 +224,7 @@ class Spraay_Recipient {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		if ( ! $wpdb->insert( Spraay_Plugin::table( 'recipients' ), $clean ) ) {
-			return new WP_Error( 'spraay_db_error', __( 'Could not save the recipient.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_db_error', __( 'Could not save the recipient.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$id = (int) $wpdb->insert_id;
@@ -252,7 +252,7 @@ class Spraay_Recipient {
 
 		$id = absint( $id );
 		if ( ! self::get( $id ) ) {
-			return new WP_Error( 'spraay_not_found', __( 'Recipient not found.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_not_found', __( 'Recipient not found.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$clean = self::sanitize( $data );
@@ -262,14 +262,14 @@ class Spraay_Recipient {
 
 		$existing = self::find_by_wallet( $clean['wallet_address'] );
 		if ( $existing && (int) $existing['id'] !== $id ) {
-			return new WP_Error( 'spraay_duplicate_wallet', __( 'Another recipient already uses this wallet address.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_duplicate_wallet', __( 'Another recipient already uses this wallet address.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$clean['updated_at'] = current_time( 'mysql', true );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		if ( false === $wpdb->update( Spraay_Plugin::table( 'recipients' ), $clean, array( 'id' => $id ) ) ) {
-			return new WP_Error( 'spraay_db_error', __( 'Could not update the recipient.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_db_error', __( 'Could not update the recipient.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		do_action( 'spraay_recipient_updated', $id, $clean );
@@ -300,7 +300,7 @@ class Spraay_Recipient {
 			)
 		);
 		if ( $in_use ) {
-			return new WP_Error( 'spraay_recipient_in_use', __( 'This recipient is part of an estimated or executed batch and cannot be deleted.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_recipient_in_use', __( 'This recipient is part of an estimated or executed batch and cannot be deleted.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		$drafts = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT batch_id FROM {$items} WHERE recipient_id = %d", $id ) );
@@ -309,7 +309,7 @@ class Spraay_Recipient {
 		// phpcs:enable
 
 		if ( ! $deleted ) {
-			return new WP_Error( 'spraay_not_found', __( 'Recipient not found.', 'spraay-batch-payouts' ) );
+			return new WP_Error( 'spraay_not_found', __( 'Recipient not found.', 'spraay-batch-payouts-for-woocommerce' ) );
 		}
 
 		foreach ( $drafts as $batch_id ) {

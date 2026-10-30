@@ -54,8 +54,6 @@ final class Spraay_Plugin {
 	 * Register hooks. WooCommerce must be active for anything to load.
 	 */
 	private function __construct() {
-		add_action( 'init', array( $this, 'load_textdomain' ) );
-
 		if ( ! self::is_woocommerce_active() ) {
 			add_action( 'admin_notices', array( $this, 'notice_missing_woocommerce' ) );
 			return;
@@ -81,13 +79,6 @@ final class Spraay_Plugin {
 	}
 
 	/**
-	 * Load translations.
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain( 'spraay-batch-payouts', false, dirname( plugin_basename( SPRAAY_BP_FILE ) ) . '/languages' );
-	}
-
-	/**
 	 * Whether WooCommerce is loaded.
 	 *
 	 * @return bool
@@ -103,7 +94,7 @@ final class Spraay_Plugin {
 		if ( ! current_user_can( 'activate_plugins' ) ) {
 			return;
 		}
-		echo '<div class="notice notice-error"><p>' . esc_html__( 'Spraay Batch Payouts requires WooCommerce to be installed and active.', 'spraay-batch-payouts' ) . '</p></div>';
+		echo '<div class="notice notice-error"><p>' . esc_html__( 'Spraay Batch Payouts requires WooCommerce to be installed and active.', 'spraay-batch-payouts-for-woocommerce' ) . '</p></div>';
 	}
 
 	/**

@@ -21,39 +21,39 @@ $spraay_grand    = Spraay_Amount::from_units( Spraay_Amount::to_units( $batch['t
 ?>
 <div class="wrap spraay-wrap">
 	<h1 class="wp-heading-inline">
-		<?php /* translators: %d: batch ID. */ echo esc_html( sprintf( __( 'Batch #%d', 'spraay-batch-payouts' ), $batch['id'] ) ); ?>
+		<?php /* translators: %d: batch ID. */ echo esc_html( sprintf( __( 'Batch #%d', 'spraay-batch-payouts-for-woocommerce' ), $batch['id'] ) ); ?>
 	</h1>
 	<?php echo Spraay_Batches_List_Table::status_badge( $batch['status'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped in status_badge(). ?>
 	<hr class="wp-header-end" />
 
-	<p><a href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_HISTORY ) ); ?>"><?php esc_html_e( '← All batches', 'spraay-batch-payouts' ); ?></a></p>
+	<p><a href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_HISTORY ) ); ?>"><?php esc_html_e( '← All batches', 'spraay-batch-payouts-for-woocommerce' ); ?></a></p>
 
 	<div class="spraay-columns">
 		<div class="spraay-panel">
-			<h2><?php esc_html_e( 'Summary', 'spraay-batch-payouts' ); ?></h2>
+			<h2><?php esc_html_e( 'Summary', 'spraay-batch-payouts-for-woocommerce' ); ?></h2>
 			<table class="spraay-kv">
 				<tr>
-					<th><?php esc_html_e( 'Payouts', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Payouts', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo esc_html( Spraay_Amount::format( $batch['total_amount'] ) ); ?> USDC</td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Spraay fee', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Spraay fee', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo esc_html( Spraay_Amount::format( $batch['fee_amount'] ) ); ?> USDC</td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Total', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Total', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><strong><?php echo esc_html( Spraay_Amount::format( $spraay_grand ) ); ?> USDC</strong></td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Recipients', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Recipients', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo esc_html( number_format_i18n( $batch['recipient_count'] ) ); ?></td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Network', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Network', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo esc_html( ( $spraay_chain ? $spraay_chain['name'] : '' ) . ' (' . $batch['chain_id'] . ')' ); ?></td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Transaction', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Transaction', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td>
 						<?php if ( $spraay_explorer ) : ?>
 							<a href="<?php echo esc_url( $spraay_explorer ); ?>" target="_blank" rel="noopener noreferrer"><code><?php echo esc_html( $batch['tx_hash'] ); ?></code></a>
@@ -63,54 +63,54 @@ $spraay_grand    = Spraay_Amount::from_units( Spraay_Amount::to_units( $batch['t
 					</td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Created', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Created', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td>
 						<?php
 						echo esc_html( get_date_from_gmt( $batch['created_at'], $spraay_fmt ) );
 						if ( $creator ) {
 							/* translators: %s: user display name. */
-							echo ' ' . esc_html( sprintf( __( 'by %s', 'spraay-batch-payouts' ), $creator->display_name ) );
+							echo ' ' . esc_html( sprintf( __( 'by %s', 'spraay-batch-payouts-for-woocommerce' ), $creator->display_name ) );
 						}
 						?>
 					</td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Approved by', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Approved by', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo $approver ? esc_html( $approver->display_name ) : '&mdash;'; ?></td>
 				</tr>
 				<tr>
-					<th><?php esc_html_e( 'Confirmed', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Confirmed', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 					<td><?php echo $batch['confirmed_at'] ? esc_html( get_date_from_gmt( $batch['confirmed_at'], $spraay_fmt ) ) : '&mdash;'; ?></td>
 				</tr>
 			</table>
 
 			<p class="spraay-actions">
 				<?php if ( Spraay_Batch::STATUS_PENDING === $batch['status'] ) : ?>
-					<a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'spraay_refresh_batch', 'batch_id' => $batch['id'] ), admin_url( 'admin-post.php' ) ), 'spraay_refresh_batch_' . $batch['id'] ) ); ?>"><?php esc_html_e( 'Refresh status', 'spraay-batch-payouts' ); ?></a>
+					<a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'spraay_refresh_batch', 'batch_id' => $batch['id'] ), admin_url( 'admin-post.php' ) ), 'spraay_refresh_batch_' . $batch['id'] ) ); ?>"><?php esc_html_e( 'Refresh status', 'spraay-batch-payouts-for-woocommerce' ); ?></a>
 				<?php endif; ?>
 				<?php if ( Spraay_Batch::is_editable( $batch ) ) : ?>
-					<a class="button button-primary" href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_NEW_BATCH, array( 'batch_id' => $batch['id'] ) ) ); ?>"><?php esc_html_e( 'Continue in builder', 'spraay-batch-payouts' ); ?></a>
+					<a class="button button-primary" href="<?php echo esc_url( Spraay_Admin::page_url( Spraay_Admin::PAGE_NEW_BATCH, array( 'batch_id' => $batch['id'] ) ) ); ?>"><?php esc_html_e( 'Continue in builder', 'spraay-batch-payouts-for-woocommerce' ); ?></a>
 				<?php endif; ?>
 			</p>
 		</div>
 	</div>
 
 	<div class="spraay-panel">
-		<h2><?php esc_html_e( 'Recipients', 'spraay-batch-payouts' ); ?></h2>
+		<h2><?php esc_html_e( 'Recipients', 'spraay-batch-payouts-for-woocommerce' ); ?></h2>
 		<table class="widefat striped">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Recipient', 'spraay-batch-payouts' ); ?></th>
-					<th><?php esc_html_e( 'Wallet', 'spraay-batch-payouts' ); ?></th>
-					<th><?php esc_html_e( 'Orders', 'spraay-batch-payouts' ); ?></th>
-					<th class="spraay-num"><?php esc_html_e( 'Amount', 'spraay-batch-payouts' ); ?></th>
-					<th><?php esc_html_e( 'Status', 'spraay-batch-payouts' ); ?></th>
+					<th><?php esc_html_e( 'Recipient', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
+					<th><?php esc_html_e( 'Wallet', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
+					<th><?php esc_html_e( 'Orders', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
+					<th class="spraay-num"><?php esc_html_e( 'Amount', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
+					<th><?php esc_html_e( 'Status', 'spraay-batch-payouts-for-woocommerce' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php foreach ( $items as $spraay_item ) : ?>
 					<tr>
-						<td><?php echo esc_html( $spraay_item['label'] ? $spraay_item['label'] : __( '(deleted recipient)', 'spraay-batch-payouts' ) ); ?></td>
+						<td><?php echo esc_html( $spraay_item['label'] ? $spraay_item['label'] : __( '(deleted recipient)', 'spraay-batch-payouts-for-woocommerce' ) ); ?></td>
 						<td><code class="spraay-address"><?php echo esc_html( (string) $spraay_item['wallet_address'] ); ?></code></td>
 						<td>
 							<?php
